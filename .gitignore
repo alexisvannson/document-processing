@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 papers
 dataset_receipt
+presentation
+*.jpeg
+*.jpg
