@@ -7,3 +7,4 @@ pandas
 scikit-image
 pyclipper
 shapely
+transformers

@@ -199,3 +199,89 @@ def get_dataloaders(metadata_path="dataset_receipt/metadata.pkl", img_dir="datas
                               num_workers=num_workers, drop_last=True)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=num_workers)
     return train_loader, valid_loader
+
+
+# ---------------------------------------------------------------------------
+# Text recognition (ViT encoder -> BERT decoder) on word crops
+# ---------------------------------------------------------------------------
+
+def crop_quad(image, quad, margin=0.15):
+    """
+    Perspective-warp a 4-corner box (TL, TR, BR, BL) to an upright rectangle.
+    Keeps a margin of `margin * height` around the text, since boxes are drawn tight.
+    """
+    quad = np.float32(quad)
+    w = max(int(max(np.linalg.norm(quad[0] - quad[1]), np.linalg.norm(quad[3] - quad[2]))), 1)
+    h = max(int(max(np.linalg.norm(quad[0] - quad[3]), np.linalg.norm(quad[1] - quad[2]))), 1)
+    m = max(int(h * margin), 1)
+    dst = np.float32([[m, m], [m + w, m], [m + w, m + h], [m, m + h]])
+    M = cv2.getPerspectiveTransform(quad, dst)
+    return cv2.warpPerspective(image, M, (w + 2 * m, h + 2 * m), borderMode=cv2.BORDER_REPLICATE)
+
+
+def get_recognition_transforms(image_size=384):
+    # ViT checkpoints are normalised with mean = std = 0.5. Crops are stretched to a square,
+    # like TrOCR does, rather than padded.
+    normalize = [A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)), ToTensorV2()]
+    train = A.Compose([
+        A.Affine(rotate=(-3, 3), shear=(-8, 8), scale=(0.9, 1.05), border_mode=cv2.BORDER_REPLICATE, p=0.7),
+        A.Resize(image_size, image_size),
+        A.Lambda(name="IlluminationGradient", image=apply_illumination_gradient, p=0.3),
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+        A.OneOf([A.GaussianBlur(blur_limit=(3, 7)), A.MotionBlur(blur_limit=7)], p=0.3),
+        A.GaussNoise(p=0.2),
+        A.ImageCompression(quality_range=(40, 95), p=0.3),
+        *normalize,
+    ])
+    valid = A.Compose([A.Resize(image_size, image_size), *normalize])
+    return train, valid
+
+
+class RecognitionDataset(Dataset):
+    """
+    One sample per word box of dataset_receipt/metadata.pkl.
+    Returns: image (3xSxS float tensor), labels (max_length long tensor, -100 = padding).
+    All crops are cut once at init (receipts are big, crops are small), so epochs don't re-read images.
+    """
+
+    def __init__(self, df, img_dir, tokenizer, transform=None, max_length=40):
+        self.tokenizer = tokenizer
+        self.transform = transform
+        self.max_length = max_length
+        self.crops, self.texts = [], []
+
+        for row in df.itertuples():
+            image = cv2.imread(os.path.join(img_dir, row.file_name))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            for box, word in zip(row.bboxes, row.words):
+                quad = [[box[f"x{k}"], box[f"y{k}"]] for k in range(1, 5)]
+                self.crops.append(crop_quad(image, quad))
+                self.texts.append(word)
+
+    def __len__(self):
+        return len(self.crops)
+
+    def __getitem__(self, idx):
+        image = self.crops[idx]
+        if self.transform:
+            image = self.transform(image=image)["image"]
+
+        ids = self.tokenizer.encode(self.texts[idx])[: self.max_length]
+        labels = torch.full((self.max_length,), -100, dtype=torch.long)
+        labels[: len(ids)] = torch.tensor(ids)
+        return image, labels
+
+
+def get_recognition_dataloaders(tokenizer, metadata_path="dataset_receipt/metadata.pkl",
+                                img_dir="dataset_receipt/images", image_size=384, batch_size=16,
+                                num_workers=4, max_length=40):
+    """dev split -> training, test split -> validation (not shuffled, so it lines up with dataset.texts)."""
+    df = pd.read_pickle(metadata_path)
+    train_tf, valid_tf = get_recognition_transforms(image_size)
+    train_dataset = RecognitionDataset(df[df.split_origin == "dev"], img_dir, tokenizer, train_tf, max_length)
+    valid_dataset = RecognitionDataset(df[df.split_origin == "test"], img_dir, tokenizer, valid_tf, max_length)
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                              num_workers=num_workers, drop_last=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=num_workers)
+    return train_loader, valid_loader
