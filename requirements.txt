@@ -1,0 +1,9 @@
+torch
+torchvision
+albumentations>=2.0
+opencv-python
+numpy
+pandas
+scikit-image
+pyclipper
+shapely

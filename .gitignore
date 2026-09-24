@@ -1,0 +1,6 @@
+.venv/
+checkpoints/
+__pycache__/
+.DS_Store
+papers
+dataset_receipt
