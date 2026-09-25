@@ -8,3 +8,4 @@ scikit-image
 pyclipper
 shapely
 transformers
+wandb

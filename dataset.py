@@ -1,5 +1,6 @@
 import torch
 import os
+import random
 import cv2
 import pandas as pd
 import numpy as np
@@ -188,17 +189,46 @@ class DBNetDataset(Dataset):
         return (image, *maps)
 
 
-def get_dataloaders(metadata_path="dataset_receipt/metadata.pkl", img_dir="dataset_receipt/images",
-                    batch_size=8, num_workers=4):
-    """dev split -> training, test split -> validation (full-size images, batch_size=1)."""
-    df = pd.read_pickle(metadata_path)
-    train_dataset = DBNetDataset(df[df.split_origin == "dev"], img_dir, train_transform)
-    valid_dataset = DBNetDataset(df[df.split_origin == "test"], img_dir, transform)
+def split_receipts(df, val_frac=0.15, test_frac=0.15, seed=42):
+    """
+    Pool every receipt in the metadata (CORD dev + test) and re-split them 70 / 15 / 15.
+    Split by receipt, not by word, so no receipt shows up in two splits. Same seed -> same split.
+    Returns train, val, test DataFrames.
+    """
+    df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
+    n_val, n_test = round(len(df) * val_frac), round(len(df) * test_frac)
+    return df.iloc[n_val + n_test:], df.iloc[:n_val], df.iloc[n_val:n_val + n_test]
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
-                              num_workers=num_workers, drop_last=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=num_workers)
-    return train_loader, valid_loader
+
+def seed_worker(worker_id):
+    """
+    DataLoader workers get torch seeds derived from the loader's generator; pass them on to
+    numpy / random (used by apply_illumination_gradient) and to albumentations, which keeps its own RNG.
+    """
+    seed = torch.initial_seed() % 2**32
+    np.random.seed(seed)
+    random.seed(seed)
+    dataset = torch.utils.data.get_worker_info().dataset
+    if dataset.transform is not None:
+        dataset.transform.set_random_seed(seed)
+
+
+def make_loader(dataset, seed, **kwargs):
+    """DataLoader whose shuffling and augmentations are reproducible for a given seed."""
+    if dataset.transform is not None:
+        dataset.transform.set_random_seed(seed)  # used as-is when num_workers=0
+    return DataLoader(dataset, generator=torch.Generator().manual_seed(seed), worker_init_fn=seed_worker, **kwargs)
+
+
+def get_dataloaders(metadata_path="dataset_receipt/metadata.pkl", img_dir="dataset_receipt/images",
+                    batch_size=8, num_workers=4, seed=42):
+    """Receipt-level 70 / 15 / 15 split (see split_receipts). Val and test use full-size images, batch_size=1."""
+    train_df, valid_df, test_df = split_receipts(pd.read_pickle(metadata_path), seed=seed)
+    train_loader = make_loader(DBNetDataset(train_df, img_dir, train_transform), seed, batch_size=batch_size,
+                               shuffle=True, num_workers=num_workers, drop_last=True)
+    valid_loader = make_loader(DBNetDataset(valid_df, img_dir, transform), seed, batch_size=1, num_workers=num_workers)
+    test_loader = make_loader(DBNetDataset(test_df, img_dir, transform), seed, batch_size=1, num_workers=num_workers)
+    return train_loader, valid_loader, test_loader
 
 
 # ---------------------------------------------------------------------------
@@ -274,14 +304,17 @@ class RecognitionDataset(Dataset):
 
 def get_recognition_dataloaders(tokenizer, metadata_path="dataset_receipt/metadata.pkl",
                                 img_dir="dataset_receipt/images", image_size=384, batch_size=16,
-                                num_workers=4, max_length=40):
-    """dev split -> training, test split -> validation (not shuffled, so it lines up with dataset.texts)."""
-    df = pd.read_pickle(metadata_path)
+                                num_workers=4, max_length=40, seed=42):
+    """
+    Receipt-level 70 / 15 / 15 split (see split_receipts), so all words of a receipt stay in one split.
+    Val and test are not shuffled, so they line up with dataset.texts.
+    """
+    train_df, valid_df, test_df = split_receipts(pd.read_pickle(metadata_path), seed=seed)
     train_tf, valid_tf = get_recognition_transforms(image_size)
-    train_dataset = RecognitionDataset(df[df.split_origin == "dev"], img_dir, tokenizer, train_tf, max_length)
-    valid_dataset = RecognitionDataset(df[df.split_origin == "test"], img_dir, tokenizer, valid_tf, max_length)
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
-                              num_workers=num_workers, drop_last=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, num_workers=num_workers)
-    return train_loader, valid_loader
+    train_loader = make_loader(RecognitionDataset(train_df, img_dir, tokenizer, train_tf, max_length), seed,
+                               batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
+    valid_loader = make_loader(RecognitionDataset(valid_df, img_dir, tokenizer, valid_tf, max_length), seed,
+                               batch_size=batch_size, num_workers=num_workers)
+    test_loader = make_loader(RecognitionDataset(test_df, img_dir, tokenizer, valid_tf, max_length), seed,
+                              batch_size=batch_size, num_workers=num_workers)
+    return train_loader, valid_loader, test_loader

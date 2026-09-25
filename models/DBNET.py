@@ -109,7 +109,7 @@ class DBNet(nn.Module):
         """ The Differentiable Binarization Formula: 1 / (1 + e^(-k * (P - T))) """
         return torch.reciprocal(1 + torch.exp(-self.k * (prob_map - thresh_map)))
 
-    def forward(self, x):
+    def forward(self, x, return_all=False):
         # Extract features
         c2 = self.layer1(x)
         c3 = self.layer2(c2)
@@ -122,8 +122,9 @@ class DBNet(nn.Module):
         # Predict Maps
         prob_map = self.prob_head(fpn_features)
         
-        # In inference, we skip the threshold map and binarization calculation entirely to save time.
-        if not self.training:
+        # In inference, we skip the threshold map and binarization calculation entirely to save time
+        # (return_all=True keeps them, to compute the validation loss).
+        if not self.training and not return_all:
             return prob_map
             
         thresh_map = self.thresh_head(fpn_features)
