@@ -44,19 +44,21 @@ class OCRModel:
         self.detector.load_state_dict(torch.load(dbnet_path, map_location="cpu"))
         self.detector.to(self.device).eval()
 
-        if any(os.path.exists(os.path.join(recognizer_path, f)) for f in ("tokenizer.json", "vocab.json")):
-            # a TrOCR-style checkpoint (notebooks/train_trocr_printed.ipynb): its own word-piece tokenizer.
-            # transformers 5 saves only tokenizer.json, older versions also vocab.json.
-            from transformers import AutoTokenizer
-
-            tokenizer = AutoTokenizer.from_pretrained(recognizer_path)
-            self.end_id = tokenizer.eos_token_id
-            self.decode = lambda ids: tokenizer.decode(ids, skip_special_tokens=True)
-        else:  # our ViT -> BERT recognizer with one token per character
+        self.recognizer = VisionEncoderDecoderModel.from_pretrained(recognizer_path).to(self.device).eval()
+        if self.recognizer.config.decoder.model_type == "bert":
+            # our ViT -> BERT recognizer (training/train_trocr.py): one token per character
             tokenizer = CharTokenizer(recognizer_path)
             self.end_id = tokenizer.sep_id
             self.decode = tokenizer.decode
-        self.recognizer = VisionEncoderDecoderModel.from_pretrained(recognizer_path).to(self.device).eval()
+        else:  # TrOCR-style (notebooks/train_trocr_printed.ipynb): its own word-piece tokenizer
+            from transformers import AutoTokenizer
+
+            try:
+                tokenizer = AutoTokenizer.from_pretrained(recognizer_path)
+            except ValueError:  # transformers 5 can't convert trocr-base-printed's own files; they are RoBERTa's
+                tokenizer = AutoTokenizer.from_pretrained("FacebookAI/roberta-large")
+            self.end_id = tokenizer.eos_token_id
+            self.decode = lambda ids: tokenizer.decode(ids, skip_special_tokens=True)
         _, self.crop_transform = get_recognition_transforms(self.recognizer.config.encoder.image_size)
 
     @torch.no_grad()
@@ -69,22 +71,29 @@ class OCRModel:
         return [order_corners(box) * scale for box in extract_bounding_boxes(prob_map, thresh=self.box_thresh)]
 
     @torch.no_grad()
-    def recognize(self, image, boxes):
-        """Text of each box, and a confidence: the geometric mean of the per-token probabilities."""
+    def recognize(self, image, boxes, num_beams=None):
+        """Text of each box, and a confidence: the geometric mean of the per-token probabilities.
+        num_beams overrides the checkpoint's generation setting (beam search is slower, often more accurate)."""
         texts, confidences = [], []
         crops = [self.crop_transform(image=crop_quad(image, box))["image"] for box in boxes]
         for i in range(0, len(crops), self.batch_size):
             batch = torch.stack(crops[i:i + self.batch_size]).to(self.device)
-            out = self.recognizer.generate(pixel_values=batch, output_scores=True, return_dict_in_generate=True)
-            # log-probability of each generated token, (batch, steps)
+            beams = {"num_beams": num_beams} if num_beams else {}
+            out = self.recognizer.generate(pixel_values=batch, output_scores=True, return_dict_in_generate=True,
+                                           **beams)
+            texts += [self.decode(seq) for seq in out.sequences.cpu()]
+            if getattr(out, "sequences_scores", None) is not None:
+                # beam search: the chosen sequence's mean log-probability per token
+                confidences += out.sequences_scores.exp().cpu().tolist()
+                continue
+            # greedy: log-probability of each generated token, (batch, steps)
             logp = torch.stack([s.log_softmax(-1) for s in out.scores], dim=1)
             tokens = out.sequences[:, 1:]  # drop the decoder start token
             token_logp = logp.gather(-1, tokens.unsqueeze(-1)).squeeze(-1)
             # keep tokens up to and including the first end token; what follows is padding
             ends = (tokens == self.end_id).cumsum(dim=1)
             keep = (ends == 0) | ((ends == 1) & (tokens == self.end_id))
-            for seq, lp, k in zip(out.sequences.cpu(), token_logp.cpu(), keep.cpu()):
-                texts.append(self.decode(seq))
+            for lp, k in zip(token_logp.cpu(), keep.cpu()):
                 confidences.append(float(lp[k].mean().exp()) if k.any() else 0.0)
         return texts, confidences
 
