@@ -1,0 +1,22 @@
+name: receipts
+version: "1.0.0"
+profile: receipts
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+clean-targets: ["target", "logs"]
+
+models:
+  receipts:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+      +grants:
+        select: ["analyst"]  # read-only role used by Metabase (infra/init/02_roles.sh)

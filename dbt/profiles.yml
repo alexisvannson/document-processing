@@ -1,0 +1,13 @@
+# Local warehouse from infra/docker-compose.yml. Override with env vars elsewhere (Airflow, RDS).
+receipts:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PORT', '5433') | int }}"
+      user: "{{ env_var('DBT_USER', 'pipeline') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'pipeline') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'warehouse') }}"
+      schema: public
+      threads: 4

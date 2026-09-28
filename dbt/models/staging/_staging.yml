@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_documents
+    description: One row per ingested receipt image, with its pipeline status.
+    columns:
+      - name: doc_id
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pending, ocr_done, redacted, extracted, ocr_failed, redact_failed, extract_failed]
+
+  - name: stg_extracted_lines
+    description: One row per text line of an extracted receipt.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [doc_id, line_idx]
+    columns:
+      - name: doc_id
+        data_tests: [not_null]
+      - name: kind
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [item, subtotal, tax, service, discount, rounding, total, cash, card, change, count, note, unknown]

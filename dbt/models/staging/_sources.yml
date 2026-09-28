@@ -1,0 +1,13 @@
+version: 2
+
+# Only the redacted `raw` schema and `ops` are sources: `raw_restricted` is never read here.
+sources:
+  - name: ops
+    description: What the pipeline did, written by pipeline/run.py.
+    tables:
+      - name: documents
+      - name: pipeline_runs
+  - name: raw
+    description: Redacted pipeline output.
+    tables:
+      - name: extracted_lines

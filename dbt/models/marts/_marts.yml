@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: fct_receipts
+    description: One row per receipt that passed every check. Amounts are in the receipt's currency (IDR).
+    columns:
+      - name: doc_id
+        data_tests: [unique, not_null]
+      - name: total
+        description: Amount paid, the last TOTAL line.
+        data_tests: [not_null]
+      - name: n_items
+        data_tests: [not_null]
+      - name: payment_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [cash, card, mixed, unknown]
+
+  - name: fct_line_items
+    description: One row per item line of a published receipt.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [doc_id, line_idx]
+    columns:
+      - name: doc_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_receipts')
+                field: doc_id
+      - name: amount
+        data_tests: [not_null]
+
+  - name: receipt_quarantine
+    description: Receipts held back from the marts, with the checks they failed.
+    columns:
+      - name: doc_id
+        data_tests: [unique, not_null]
+      - name: failed_checks
+        description: Any of no_items, items_do_not_reconcile, change_inconsistent.
+        data_tests: [not_null]
