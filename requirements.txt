@@ -1,4 +1,6 @@
+# torch 2.2 (last release with Intel-Mac wheels) is built against NumPy 1.x; elsewhere (Colab) NumPy 2 is fine
 torch
+numpy<2; sys_platform == "darwin" and platform_machine == "x86_64"
 torchvision
 albumentations>=2.0
 opencv-python
@@ -13,3 +15,4 @@ psycopg[binary]>=3.1
 dbt-postgres>=1.8
 google-genai>=2.25
 langgraph>=1.2
+matplotlib  # notebooks
