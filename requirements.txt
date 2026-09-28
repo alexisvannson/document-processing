@@ -9,3 +9,7 @@ pyclipper
 shapely
 transformers
 wandb
+psycopg[binary]>=3.1
+dbt-postgres>=1.8
+google-genai>=2.25
+langgraph>=1.2
