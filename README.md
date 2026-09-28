@@ -47,7 +47,8 @@ ocr/                     OCR models and their data code
   getDBprobMap.py        ground-truth probability and threshold maps from word boxes
   getDBbboxes.py         probability map -> text boxes (post-processing)
 training/                train_dbnet.py, train_trocr.py (W&B logging, best checkpoint on val loss)
-notebooks/               Colab notebooks: train DBNet, evaluate DBNet, train the recognizer
+notebooks/               Colab notebooks: train / evaluate DBNet, train the recognizer (from scratch, or
+                         fine-tune trocr-base-printed), and eda_words (word and character imbalance)
 
 pipeline/                receipts pipeline (plain Python, runs from the CLI or Airflow)
   run.py                 CLI: python -m pipeline.run [--steps ...] [--corrupt 0.1] [--reset] [--run-id ...]
@@ -250,7 +251,7 @@ Keep `.env` to plain `KEY=value` lines, without quotes, because the Makefile inc
 | --- | --- |
 | `make setup` | create `.venv` and install `requirements.txt` |
 | `make up` / `make down` | start / stop Postgres, Metabase and Airflow; data persists in the `pgdata` volume |
-| `make pipeline [CORRUPT=0.1]` | reprocess every receipt through the pipeline |
+| `make pipeline [CORRUPT=0.1] [OCR=model RECOGNIZER=...]` | reprocess every receipt through the pipeline, with ground-truth OCR or the trained models |
 | `make dbt` | build and test the dbt models |
 | `make dashboard` | create or refresh the Metabase dashboard |
 | `make trigger` | run the Airflow DAG now |
