@@ -1,0 +1,69 @@
+name: document-processing
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pipeline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pipeline}
+      POSTGRES_DB: ${POSTGRES_DB:-warehouse}
+      ANALYST_PASSWORD: ${ANALYST_PASSWORD:-analyst}  # read by init/02_roles.sh
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"  # 5433 on the host so it doesn't clash with a local Postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro  # only runs on an empty volume
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  metabase:
+    image: metabase/metabase:latest
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_DBNAME: metabase
+      MB_DB_USER: ${POSTGRES_USER:-pipeline}
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-pipeline}
+      JAVA_OPTS: -Xmx1g  # the JVM otherwise sizes its heap from the whole Docker VM
+    ports:
+      - "${METABASE_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Local dev: `airflow standalone` runs the scheduler, API server, DAG processor and
+  # triggerer in one container. UI on localhost:8080 (AIRFLOW_PORT), no login (every user is admin).
+  airflow:
+    build:
+      context: ..
+      dockerfile: infra/airflow/Dockerfile
+    command: standalone
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-pipeline}:${POSTGRES_PASSWORD:-pipeline}@postgres:5432/airflow
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
+      AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "30"
+      PYTHONPATH: /opt/airflow/project  # the DAG imports pipeline.runs for its bookkeeping
+      # inside the compose network: host `postgres`, port 5432 (not the host's .env URLs)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pipeline}:${POSTGRES_PASSWORD:-pipeline}@postgres:5432/${POSTGRES_DB:-warehouse}
+      DBT_HOST: postgres
+      DBT_PORT: "5432"
+      DBT_USER: ${POSTGRES_USER:-pipeline}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD:-pipeline}
+      DBT_DBNAME: ${POSTGRES_DB:-warehouse}
+    volumes:
+      - ../dags:/opt/airflow/dags:ro
+      - ..:/opt/airflow/project:ro
+    ports:
+      - "${AIRFLOW_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

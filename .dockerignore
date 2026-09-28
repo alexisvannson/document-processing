@@ -1,0 +1,3 @@
+# The Airflow image only needs the pipeline's requirements; the code and data are mounted.
+*
+!pipeline/requirements.txt
