@@ -44,7 +44,18 @@ class OCRModel:
         self.detector.load_state_dict(torch.load(dbnet_path, map_location="cpu"))
         self.detector.to(self.device).eval()
 
-        self.tokenizer = CharTokenizer(recognizer_path)
+        if any(os.path.exists(os.path.join(recognizer_path, f)) for f in ("tokenizer.json", "vocab.json")):
+            # a TrOCR-style checkpoint (notebooks/train_trocr_printed.ipynb): its own word-piece tokenizer.
+            # transformers 5 saves only tokenizer.json, older versions also vocab.json.
+            from transformers import AutoTokenizer
+
+            tokenizer = AutoTokenizer.from_pretrained(recognizer_path)
+            self.end_id = tokenizer.eos_token_id
+            self.decode = lambda ids: tokenizer.decode(ids, skip_special_tokens=True)
+        else:  # our ViT -> BERT recognizer with one token per character
+            tokenizer = CharTokenizer(recognizer_path)
+            self.end_id = tokenizer.sep_id
+            self.decode = tokenizer.decode
         self.recognizer = VisionEncoderDecoderModel.from_pretrained(recognizer_path).to(self.device).eval()
         _, self.crop_transform = get_recognition_transforms(self.recognizer.config.encoder.image_size)
 
@@ -59,7 +70,7 @@ class OCRModel:
 
     @torch.no_grad()
     def recognize(self, image, boxes):
-        """Text of each box, and a confidence: the geometric mean of the per-character probabilities."""
+        """Text of each box, and a confidence: the geometric mean of the per-token probabilities."""
         texts, confidences = [], []
         crops = [self.crop_transform(image=crop_quad(image, box))["image"] for box in boxes]
         for i in range(0, len(crops), self.batch_size):
@@ -69,11 +80,11 @@ class OCRModel:
             logp = torch.stack([s.log_softmax(-1) for s in out.scores], dim=1)
             tokens = out.sequences[:, 1:]  # drop the decoder start token
             token_logp = logp.gather(-1, tokens.unsqueeze(-1)).squeeze(-1)
-            # keep tokens up to and including the first [SEP]; what follows is padding
-            seps = (tokens == self.tokenizer.sep_id).cumsum(dim=1)
-            keep = (seps == 0) | ((seps == 1) & (tokens == self.tokenizer.sep_id))
+            # keep tokens up to and including the first end token; what follows is padding
+            ends = (tokens == self.end_id).cumsum(dim=1)
+            keep = (ends == 0) | ((ends == 1) & (tokens == self.end_id))
             for seq, lp, k in zip(out.sequences.cpu(), token_logp.cpu(), keep.cpu()):
-                texts.append(self.tokenizer.decode(seq))
+                texts.append(self.decode(seq))
                 confidences.append(float(lp[k].mean().exp()) if k.any() else 0.0)
         return texts, confidences
 

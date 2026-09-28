@@ -18,6 +18,7 @@ TROCR_BATCH_SIZE ?= 16
 TROCR_LR ?= 5e-5
 CORRUPT ?= 0.0
 OCR ?= ground_truth
+RECOGNIZER ?= checkpoints/trocr/best
 Q ?= How many receipts were published, and how fresh is the data?
 COMPOSE := docker compose $(if $(wildcard .env),--env-file .env) -f infra/docker-compose.yml
 
@@ -74,7 +75,7 @@ psql: ## Open a psql shell on the warehouse
 	$(COMPOSE) exec postgres psql -U pipeline -d warehouse
 
 pipeline: setup ## Run ingest -> OCR -> redact -> extract into Postgres (OCR=model for the trained models)
-	$(PY) -m pipeline.run --reset --ocr $(OCR) --corrupt $(CORRUPT)
+	$(PY) -m pipeline.run --reset --ocr $(OCR) --recognizer $(RECOGNIZER) --corrupt $(CORRUPT)
 
 dbt: setup ## Build the dbt models and run their tests (staging -> marts, quarantine)
 	$(VENV)/bin/dbt build --project-dir dbt --profiles-dir dbt
