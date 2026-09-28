@@ -9,10 +9,10 @@ import pandas as pd
 import torch
 from shapely.geometry import Polygon
 
-from dataset import get_dataloaders
-from DBLoss import DBLoss
-from getDBbboxes import extract_bounding_boxes
-from models.DBNET import DBNet
+from ocr.dataset import get_dataloaders
+from ocr.DBLoss import DBLoss
+from ocr.getDBbboxes import extract_bounding_boxes
+from ocr.models.DBNET import DBNet
 
 
 def parse_args():

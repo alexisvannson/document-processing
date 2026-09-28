@@ -6,10 +6,10 @@ from contextlib import nullcontext
 import torch
 from transformers import VisionEncoderDecoderModel, get_cosine_schedule_with_warmup
 
-from dataset import get_recognition_dataloaders
-from models.BERT import CharTokenizer
-from models.TrOCR import build_trocr
-from train_dbnet import get_device, init_wandb, set_seed
+from ocr.dataset import get_recognition_dataloaders
+from ocr.models.BERT import CharTokenizer
+from ocr.models.TrOCR import build_trocr
+from training.train_dbnet import get_device, init_wandb, set_seed
 
 
 def parse_args():

@@ -1,7 +1,7 @@
 from transformers import VisionEncoderDecoderModel
 
-from models.BERT import build_bert_decoder
-from models.VIT import build_vit_encoder
+from ocr.models.BERT import build_bert_decoder
+from ocr.models.VIT import build_vit_encoder
 
 
 def build_trocr(tokenizer, encoder_name="google/vit-base-patch16-384", decoder_name="bert-base-cased",

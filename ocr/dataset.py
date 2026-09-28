@@ -12,7 +12,7 @@ from albumentations.pytorch import ToTensorV2
 from skimage.filters import threshold_sauvola
 from torchvision.io import decode_image
 
-from getDBprobMap import generate_dbnet_prob_map, generate_dbnet_thresh_map
+from ocr.getDBprobMap import generate_dbnet_prob_map, generate_dbnet_thresh_map
 
 """window_size (Odd Integer): Determines the size of the local neighborhood used to calculate the threshold. Larger windows (e.g., 25, 35) are better for capturing larger text or thicker features, while smaller windows (e.g., 11, 15) pick up fine, thin details but are more sensitive to background noise.
 

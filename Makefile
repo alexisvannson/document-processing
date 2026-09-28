@@ -41,9 +41,9 @@ $(VENV)/.installed: requirements.txt
 	@touch $@
 
 traindbnet: setup ## Train DBNet on dataset_receipt (checkpoints -> checkpoints/)
-	$(PY) train_dbnet.py --epochs $(EPOCHS) --batch-size $(BATCH_SIZE) --lr $(LR) \
+	$(PY) -m training.train_dbnet --epochs $(EPOCHS) --batch-size $(BATCH_SIZE) --lr $(LR) \
 		--num-workers $(NUM_WORKERS) --val-every $(VAL_EVERY)
 
 traintrocr: setup ## Train the ViT -> BERT text recognizer on word crops (checkpoints -> checkpoints/trocr/)
-	$(PY) train_trocr.py --epochs $(TROCR_EPOCHS) --batch-size $(TROCR_BATCH_SIZE) --lr $(TROCR_LR) \
+	$(PY) -m training.train_trocr --epochs $(TROCR_EPOCHS) --batch-size $(TROCR_BATCH_SIZE) --lr $(TROCR_LR) \
 		--num-workers $(NUM_WORKERS)
