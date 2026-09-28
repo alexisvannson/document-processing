@@ -1,0 +1,4 @@
+# What the pipeline steps need (the full requirements.txt adds torch & co. for training).
+# pandas is pinned to the version that wrote dataset_receipt/metadata.pkl.
+pandas==3.0.6
+psycopg[binary]>=3.1
