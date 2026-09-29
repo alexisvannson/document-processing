@@ -1,53 +1,44 @@
 # Data platform (optional extra)
 
 This isn't part of the OCR brief: see the [main README](../README.md) for the OCR itself. It runs the OCR inside
-a small data platform, to show how it would be used on real documents. Receipts stand in for medical reports:
-both are unstructured, photographed in bad conditions, contain personal data, and need specific values extracted
-reliably.
+a small pipeline, to measure what OCR errors cost downstream: a receipt is published only if its items add up to
+its total, so running the same pipeline on perfect OCR and on the trained models isolates the error OCR adds
+(`notebooks/eval_system.ipynb`).
 
-The main design rule: **deterministic pipelines produce trusted data; the agent only reasons over it.** Every step
-is repeatable and logged, a receipt that fails a check is quarantined rather than published, and nothing
-downstream of the redaction step can read unredacted text.
+The design rule: **deterministic steps produce trusted data.** Every step is repeatable and logged, a receipt that
+fails a check is quarantined rather than published, and nothing downstream of the redaction step can read
+unredacted text.
 
 ## Architecture
 
 ```
-                    ┌──────────────── Airflow: receipts_daily (daily) ────────────────┐
-                    │                                                                   │
- dataset_receipt/   │  ingest ──► ocr ──► redact ──► extract ──► dbt build ──► finish   │
-   images/*.png ────┼─►  │         │        │          │            │                   │
-   metadata.pkl     └────┼─────────┼────────┼──────────┼────────────┼───────────────────┘
-                         ▼         ▼        ▼          ▼            ▼
+ dataset_receipt/        pipeline/ (Python CLI)                          dbt/
+   images/*.png  ───►  ingest ──► ocr ──► redact ──► extract ───────►  checks ──► publish or quarantine
+   metadata.pkl            │        │        │          │                 │
+                           ▼        ▼        ▼          ▼                 ▼
                  ┌─────────────────────── Postgres: warehouse ───────────────────────┐
                  │ ops             documents (status per receipt), pipeline_runs     │
                  │ raw_restricted  ocr_tokens, unredacted (no analyst access)        │
                  │ raw             ocr_tokens (PII masked), extracted_lines          │
                  │ staging         dbt views + per-receipt checks                    │
                  │ marts           fct_receipts, fct_line_items, receipt_quarantine  │
-                 └──────────────────────────────────┬────────────────────────────────┘
-                                                    │ read-only role `analyst`
-                                     ┌──────────────┴──────────────┐
-                                     ▼                             ▼
-                              Metabase dashboard            LangGraph agent (Gemini)
+                 └───────────────────────────────────────────────────────────────────┘
 ```
 
 ## Layout
 
 ```
-pipeline/                receipts pipeline (plain Python, runs from the CLI or Airflow)
-  run.py                 CLI: python -m data_platform.pipeline.run [--steps ...] [--ocr model] [--corrupt 0.1] [--reset]
+pipeline/                receipts pipeline (plain Python CLI)
+  run.py                 python -m data_platform.pipeline.run [--steps ...] [--ocr model] [--corrupt 0.1] [--reset]
   ingest.py ocr.py redact.py extract.py   the four steps
   lines.py               deskew + group word boxes into text lines
   db.py runs.py          per-receipt transactions and statuses; run bookkeeping in ops.pipeline_runs
   snapshot.py            export one row per receipt to a CSV (results/, read by notebooks/eval_system.ipynb)
+  table.py               the same steps and checks in pandas, no database: one DataFrame of (amount, item) tuples
 dbt/                     staging -> checks -> marts, with tests
-dags/receipts_daily.py   Airflow DAG
-agent/                   LangGraph agent: graph.py (nodes, CLI), tools.py (read-only SQL, receipt lookup)
 infra/
-  docker-compose.yml     Postgres, Metabase, Airflow
-  init/                  database setup on first start: databases, warehouse schemas, `analyst` role
-  airflow/Dockerfile     Airflow image with separate venvs for the pipeline and dbt
-  metabase/setup.py      provisions the Metabase admin, warehouse connection and dashboard
+  docker-compose.yml     Postgres
+  init/                  database setup on first start: warehouse schemas, read-only `analyst` role
 ```
 
 ## Quick start
@@ -55,22 +46,17 @@ infra/
 Run every command from the repo root.
 
 **Prerequisites**
-- Docker Desktop. Give it 6–8 GB of memory: Postgres, Metabase and Airflow use about 2.5 GB together.
+- Docker Desktop.
 - `make setup` (see the main README) and the data in `dataset_receipt/`.
 - For `OCR=model`: `checkpoints/dbnet_best.pt` and `checkpoints/trocr-printed/best`.
-- For the agent only: a Gemini API key (the free tier works, with Flash models).
 
 ```bash
-cp .env.example .env     # optional: passwords, ports, GEMINI_API_KEY
-make up                  # Postgres :5433, Metabase :3000, Airflow :8080
+cp .env.example .env     # optional: passwords and port
+make up                  # Postgres on :5433
 make pipeline            # load the 200 receipts: ingest -> OCR -> redact -> extract (OCR=model for the trained models)
 make dbt                 # build and test the marts
-make dashboard           # create the Metabase dashboard (prints its URL and login)
-make ask Q="What's the average receipt total by payment method?"
+make psql                # look at the results
 ```
-
-After that, Airflow runs the same steps every day. `make trigger` starts a run immediately. The Airflow UI is at
-http://localhost:8080 (no login locally).
 
 **Comparing OCR engines** (`notebooks/eval_system.ipynb`):
 
@@ -108,9 +94,9 @@ pending ─ocr─► ocr_done ─redact─► redacted ─extract─► extracte
   page using the median slope of the words, groups words into lines, and labels each line by keyword, in English
   and Indonesian: `item`, `subtotal`, `tax`, `service`, `discount`, `total`, `cash`, `card`, `change`… It parses
   `16,500` / `23.000` / `Rp 45.000`, quantities and unit prices. Every extracted line keeps `token_idxs`, pointing
-  back to its boxes in the image.
+  back to its boxes in the image. `extract_lines(tokens)` needs no database.
 
-On the ground-truth OCR: all 200 receipts are ingested, 177 are extracted, and 23 fail with no readable TOTAL
+On the ground-truth OCR: all 200 receipts are ingested, 184 are extracted, and 16 fail with no readable TOTAL
 amount.
 
 ### dbt (`dbt/`)
@@ -129,52 +115,30 @@ Each extracted receipt lands in exactly one mart:
 | `marts.fct_line_items` | their items: name, normalized name, qty, unit price, amount, source boxes |
 | `marts.receipt_quarantine` | the others, with `failed_checks` |
 
-On ground truth: 139 published and 38 quarantined. With `CORRUPT=0.1`: 92 published and 85 quarantined. The 25
+On ground truth: 146 published and 38 quarantined (`make table` reproduces these numbers without the database).
+The CSVs in `results/system_*.csv` were exported with the earlier rules (139 published). The 25
 tests include two of my own: no receipt is lost between the marts, and no published item name looks like a phone
 number, card number or email. A failing test stops the marts from being rebuilt, so downstream readers keep the
-last good data. The `analyst` role gets SELECT on every mart that is rebuilt.
+last good data.
 
-### Airflow (`dags/receipts_daily.py`)
+## How I'd deploy it
 
-`start → ingest → ocr → redact → extract → dbt_build → finish`, scheduled daily with one retry per task.
+Not built here: with 200 fixed receipts, a scheduler, a dashboard and an agent would add moving parts without
+adding evidence about the OCR. Once receipts arrive continuously, I'd add them in this order:
 
-- Each step runs the pipeline CLI under the DAG run's id, so `ops.pipeline_runs` has one row per run, with every
-  step's stats.
-- A task that still fails after its retry marks the run `failed` and names the task. The dashboard and the agent
-  read this.
-- The image keeps the pipeline and dbt in their own venvs, isolated from Airflow's packages. The repo is mounted
-  read-only.
-
-### Metabase
-
-`make dashboard` provisions everything through Metabase's API and can be re-run:
-
-- the admin account, on first run
-- a connection to the warehouse as the read-only `analyst` role
-- a "Receipts" dashboard: published, quarantined and failed counts, last run status, receipt totals, payment
-  methods, top items, quarantine reasons and recent pipeline runs
-
-### Agent (`agent/`)
-
-A LangGraph graph that answers questions about the receipts, using Gemini (`gemini-3.8-flash` by default) through
-Google's `google-genai` SDK. The SDK's automatic function calling is off, so the graph owns the loop:
-
-```
-START → check_freshness → agent ⇄ tools → guard → END
-```
-
-- **check_freshness** reads the last pipeline run and the receipt counts by status before the model sees the
-  question. Answers can then say how fresh the data is and what they leave out.
-- **tools**: `run_sql` (one SELECT, at most 100 rows) and `get_receipt(doc_id)`.
-  - Both connect as `analyst`, in read-only transactions with a 5 s statement timeout.
-  - Postgres itself rejects writes and access to `raw` or `raw_restricted`.
-- **guard** masks anything that looks like a phone number, card number or email in the final answer.
-- At most 8 tool rounds per question. Overloaded-model errors (503) are retried with backoff, then the question
-  goes to `GEMINI_FALLBACK_MODEL`.
-
-```bash
-make ask Q="Why is receipt 57 quarantined?"     # --verbose output shows the data status and tool calls
-```
+1. **Airflow, to run the pipeline.** One DAG, triggered when photos land in object storage (or hourly):
+   `ingest → ocr → redact → extract → dbt build`. The OCR task runs the models in their own GPU container
+   (`KubernetesPodOperator`), so Airflow only orchestrates and never installs torch. Each task retries, and a
+   failure is recorded in `ops.pipeline_runs`. When a new model version ships, a backfill reprocesses old receipts
+   and the two versions are compared on the same checks.
+2. **Metabase, to watch quality.** Connected as the read-only `analyst` role: published vs quarantined receipts
+   over time, the reasons for quarantine, mean OCR confidence per day (a drop signals a new kind of photo), and
+   the last run's status. An alert fires when the quarantine rate jumps.
+3. **An agent (LangGraph), last and only if people ask questions the dashboard can't answer.** Read-only SQL
+   tools under the `analyst` role, a statement timeout, the data's freshness stated in every answer, and PII
+   masked in the output. LangGraph earns its place over a plain loop when a person must approve a step, such as a
+   reviewer accepting a corrected total for a quarantined receipt. Before it ships: a fixed set of questions with
+   expected answers.
 
 ## Configuration
 
@@ -184,37 +148,17 @@ local defaults.
 
 | Variable | Used for |
 | --- | --- |
-| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` | the agent |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | the warehouse container |
 | `ANALYST_PASSWORD` | the read-only role; only applied when the Postgres volume is first created |
-| `METABASE_PORT`, `AIRFLOW_PORT` | host ports |
-| `DATABASE_URL`, `AGENT_DATABASE_URL`, `DBT_*` | connections from the host, derived from the values above |
-| `MB_URL`, `MB_ADMIN_EMAIL`, `MB_ADMIN_PASSWORD` | Metabase provisioning |
+| `DATABASE_URL`, `DBT_*` | connections from the host, derived from the values above |
 
 Keep `.env` to plain `KEY=value` lines, without quotes, because the Makefile includes it directly.
 
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `make up` / `make down` | start / stop Postgres, Metabase and Airflow; data persists in the `pgdata` volume |
-| `make pipeline [OCR=model] [CORRUPT=0.1]` | reprocess every receipt, with ground-truth OCR or the trained models |
-| `make dbt` | build and test the dbt models |
-| `make dashboard` | create or refresh the Metabase dashboard |
-| `make trigger` | run the Airflow DAG now |
-| `make ask Q="..."` | ask the agent a question |
-| `make psql` | psql shell on the warehouse |
-
 ## Limitations
 
-- **Airflow runs the ground-truth OCR only.** Its image doesn't install torch, to stay small. Running the models
-  on a schedule would need a GPU worker, or a separate OCR service the DAG calls.
 - **The model run in `results/` covers 164 of the 200 receipts.** It was stopped at about 18 s per receipt on CPU.
   `python -m data_platform.pipeline.run --ocr model` (without `--reset`) finishes the rest.
 - **Extraction is rule-based and tuned on these 200 receipts.**
-- **The receipts carry almost no PII.** 1 phone number and 1 card number are masked across the dataset. Medical
-  reports would need a NER model behind the rules, with recall measured on a hand-labelled set.
-- **The agent has no evaluation set yet.** It answers real questions correctly (checked against SQL), but it
-  still needs a fixed set of questions with expected answers to measure changes.
-- **Everything is set up for local development:** default passwords, no Airflow login, a single-container Airflow
-  (`standalone`). On AWS this would map to RDS, managed Airflow and Secrets Manager.
+- **The receipts carry almost no PII.** 1 phone number and 1 card number are masked across the dataset.
+- **Everything is set up for local development:** default passwords, one Postgres container. On AWS this would
+  map to RDS and Secrets Manager.

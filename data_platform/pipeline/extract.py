@@ -3,7 +3,7 @@ import re
 from data_platform.pipeline.db import process_documents
 from data_platform.pipeline.lines import group_lines
 
-EXTRACTOR_VERSION = "rules-v1"
+EXTRACTOR_VERSION = "rules-v2"
 
 # "16,500" "23.000" "Rp 45.000" "@28,000" "-5,000" "(5,000)" "20.00" "0". Both "," and "." are
 # thousands separators on these (Indonesian) receipts; a 2-digit tail is read as cents.
@@ -15,7 +15,7 @@ QTY = re.compile(r"^(?:(\d{1,2})[xX]|[xX](\d{1,2}))$")  # "2x" / "x2"
 KINDS = [
     ("subtotal", r"\bSUB\s*-?\s*(TOTAL|TTL)\b|\bSUBTOTAL\b|\bSUBTTL\b"),
     ("total", r"\bTOTAL\s+BAYAR\b"),  # "amount to pay", not the cash handed over
-    ("change", r"\bCHANGED?\b|\bKEMBALI(AN)?\b"),
+    ("change", r"\bCHANGED?\b|\bKEMBALI(AN)?\b|^\W*CG\b"),  # "CG 9,000" on some tills
     ("discount", r"\bDISC(OUNT)?\b|\bDISKON\b|\bPROMO\b"),
     ("card", r"\bCARD\b|\bCREDIT\b|\bDEBIT\b|\bVISA\b|\bMASTER|\bBCA\b|\bEDC\b|\bQRIS\b|\bGOPAY\b|\bOVO\b|\bKARTU\b|\bNON\s*TUNAI\b"),
     ("cash", r"\bCASH\b|\bTUNAI\b|\bTENDERED\b|\bBAYAR\b|\bPAY\b"),
@@ -23,9 +23,19 @@ KINDS = [
     ("service", r"\bSERVICE\b|\bSVC\b|\bSRV\b|\bCHG\b|\bCHRG\b"),
     ("rounding", r"\bROUNDING\b|\bPEMBULATAN\b"),
     ("count", r"ITEMS?\b|\bQTY\b"),  # "5.00 xITEMS"
-    ("total", r"TOTAL\b|\bTTL\b|\bDUE\b|\bJUMLAH\b"),  # no leading \b: "***TOTAL"
+    ("total", r"TOTAL\b|\bTTL\b|\bDUE\b|\bJUMLAH\b|^\W*TL\b"),  # no leading \b: "***TOTAL"; "TL 21,000"
 ]
 KINDS = [(kind, re.compile(pattern, re.I)) for kind, pattern in KINDS]
+
+# "TOTAL (Qty 2.00 60.000" is the total with the item count beside it, not a count line.
+TOTAL_FIRST = re.compile(r"^\W*(GRAND\s*)?TOTAL\b", re.I)
+
+# Labels the OCR misread by one letter ("TUAI" for TUNAI, "TOTA1"). Only long keywords, only
+# single words of 4+ letters, and payment labels only below the total, where no items are
+# listed: above it, "TUNA" is a sandwich, not TUNAI.
+FUZZY_KEYWORDS = {"SUBTOTAL": "subtotal", "TOTAL": "total", "TUNAI": "cash",
+                  "KEMBALI": "change", "KEMBALIAN": "change", "CHANGE": "change"}
+BELOW_TOTAL_ONLY = {"cash", "change"}
 
 
 def clean(text):
@@ -49,6 +59,19 @@ def is_word(text):
             and parse_amount(t) is None and not QTY.match(t))
 
 
+def is_code(texts, i):
+    """A product code, not a price: a bare number of 4+ digits opening a line, before a word
+    ("901016 -TICKET CP"). Prices come after the name; a small leading number is a quantity."""
+    t = clean(texts[i])
+    return i == 0 and t.isdigit() and len(t) >= 4 and len(texts) > 1 and is_word(texts[1])
+
+
+def line_numbers(texts):
+    """(position, value) of the amounts on a line, product codes left out."""
+    return [(i, parse_amount(t)) for i, t in enumerate(texts)
+            if parse_amount(t) is not None and not is_code(texts, i)]
+
+
 def classify(line_text):
     for kind, pattern in KINDS:
         if pattern.search(line_text):
@@ -56,14 +79,38 @@ def classify(line_text):
     return None
 
 
+def edit_distance(a, b):
+    previous = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        current = [i]
+        for j, cb in enumerate(b, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (ca != cb)))
+        previous = current
+    return previous[-1]
+
+
+def fuzzy_kind(texts, below_total):
+    """The kind of a label misread by one letter, or None."""
+    for text in texts:
+        word = clean(text).upper()
+        if len(word) < 4 or not word.isalpha():
+            continue
+        for keyword, kind in FUZZY_KEYWORDS.items():
+            if edit_distance(word, keyword) == 1 and (below_total or kind not in BELOW_TOTAL_ONLY):
+                return kind
+    return None
+
+
 def parse_line(texts):
     """Kind, name, qty, unit price and amount of one line, from its token texts left to right."""
     line_text = " ".join(texts)
-    numbers = [(i, parse_amount(t)) for i, t in enumerate(texts) if parse_amount(t) is not None]
+    numbers = line_numbers(texts)
     words = [t for t in texts if is_word(t)]
     amount = numbers[-1][1] if numbers else None
 
     kind = classify(line_text)
+    if kind == "count" and TOTAL_FIRST.match(line_text) and amount is not None and amount >= 1000:
+        kind = "total"  # "TOTAL (Qty 2.00 60.000"; "Total Item: 4" stays a count
     if kind is None:
         if amount is None:
             kind = "note"  # "Less Ice 70%"
@@ -109,9 +156,9 @@ def extract_lines(tokens):
     while i < len(lines):
         line = lines[i]
         texts = [tokens[j]["text"] for j in line]
-        if i + 1 < len(lines) and all(parse_amount(t) is None for t in texts):
+        if i + 1 < len(lines) and not line_numbers(texts):
             nxt = [tokens[j]["text"] for j in lines[i + 1]]
-            if nxt and not any(is_word(t) for t in nxt) and any(parse_amount(t) is not None for t in nxt):
+            if nxt and not any(is_word(t) for t in nxt) and line_numbers(nxt):
                 line = line + lines[i + 1]
                 i += 1
         merged.append(line)
@@ -119,7 +166,12 @@ def extract_lines(tokens):
 
     rows, seen_total = [], False
     for line_idx, line in enumerate(merged):
-        row = parse_line([tokens[j]["text"] for j in line])
+        texts = [tokens[j]["text"] for j in line]
+        row = parse_line(texts)
+        if row["kind"] in ("item", "note", "unknown"):
+            kind = fuzzy_kind(texts, below_total=seen_total)
+            if kind:
+                row.update(kind=kind, name=None, qty=None, unit_price=None)
         if seen_total and row["kind"] == "item":
             row.update(kind="unknown", name=None, qty=None, unit_price=None)
         seen_total = seen_total or row["kind"] == "total"

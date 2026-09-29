@@ -1,0 +1,201 @@
+file_name,split,items,total,n_items,items_total,subtotal,tax,cash,change,payment_method,failed_checks,outcome,n_tokens,mean_confidence
+dev_receipt_00000.png,train,"[(16500, 'REAL GANACHE'), (13000, 'EGG TART'), (16000, 'PIZZA TOAST')]",45500.0,3,45500,,,50000.0,4500.0,cash,[],published,18,1.0
+dev_receipt_00001.png,train,"[(23000, 'Kopi Susu Kolonel')]",23000.0,1,23000,,,50000.0,27000.0,cash,[],published,11,1.0
+dev_receipt_00002.png,train,"[(20000, 'S-Ovaltine')]",20000.0,1,20000,18181.0,1818.0,100000.0,80000.0,cash,[],published,18,1.0
+dev_receipt_00003.png,train,"[(28000, 'M-Caramel Black Tea')]",28000.0,1,28000,28000.0,,28000.0,0.0,cash,[],published,19,1.0
+dev_receipt_00004.png,train,"[(1, 'BBQ Chicken'), (41000, 'Sedang')]",41000.0,2,41001,,,41000.0,9000.0,cash,['change_inconsistent'],quarantined,16,1.0
+dev_receipt_00005.png,test,"[(8000, 'LE MINERAL'), (7273, 'NET1 AMT')]",8000.0,2,15273,,727.0,8000.0,,cash,['items_do_not_reconcile'],quarantined,14,1.0
+dev_receipt_00006.png,train,"[(19000, 'POTATO SAUSAGE BREAD'), (52000, 'OREO GREEN TEA SPREAD'), (52000, 'WHITE CHOCO BANANA SPREAD')]",123000.0,3,123000,,,,,card,[],published,21,1.0
+dev_receipt_00007.png,train,"[(63636, 'Choco Devil')]",59500.0,1,63636,63636.0,5409.0,100000.0,,cash,[],published,21,1.0
+dev_receipt_00008.png,train,"[(19500, 'TALAM UNGU'), (-7800, 'AMOUNT'), (0, 'MIKA KECIL')]",11700.0,3,11700,11700.0,,20000.0,8300.0,cash,[],published,24,1.0
+dev_receipt_00009.png,test,"[(20000, 'Tahu Ikan Oma Giok')]",20000.0,1,20000,,,20000.0,0.0,cash,[],published,12,1.0
+dev_receipt_00010.png,train,"[(40000, 'Serbu'), (20000, 'Choco Peanut Bread')]",60000.0,2,60000,,,60000.0,0.0,cash,[],published,15,1.0
+dev_receipt_00011.png,train,"[(20000, ""Se'I Sapi Sambal Matah R""), (35000, ""Se'I Sapi Lada Hitam (J)""), (10000, 'Nasi Putih'), (16000, 'Milk Shake Coklat')]",89100.0,4,81000,81000.0,8100.0,,0.0,card,[],published,37,1.0
+dev_receipt_00012.png,train,"[(72000, 'ES KOPI SUSU')]",72000.0,1,72000,,,,0.0,card,[],published,11,1.0
+dev_receipt_00013.png,train,"[(7727, 'MINERAL ML'), (33636, 'BULGOGI RICE R')]",45500.0,2,41363,41364.0,4136.0,50000.0,4500.0,cash,[],published,21,1.0
+dev_receipt_00014.png,train,"[(24000, 'Arem Arem'), (12000, 'Kroket')]",39600.0,2,36000,36000.0,3600.0,,,unknown,[],published,26,1.0
+dev_receipt_00015.png,val,"[(24000, 'Arem Arem'), (30000, 'Pepenero Pastel')]",59400.0,2,54000,54000.0,5400.0,100000.0,40600.0,cash,[],published,26,1.0
+dev_receipt_00016.png,val,"[(20000, 'TT')]",20000.0,1,20000,,,100000.0,80000.0,cash,[],published,10,1.0
+dev_receipt_00017.png,train,"[(20000, 'LEMONADE 16OZ')]",20000.0,1,20000,20000.0,,100000.0,80000.0,cash,[],published,12,1.0
+dev_receipt_00018.png,test,"[(10000, 'beef C roll 3pcs'), (15000, 'kaya bred')]",25000.0,2,25000,,,100000.0,75000.0,cash,[],published,19,1.0
+dev_receipt_00019.png,test,"[(12500, 'FUTAMI GREEN TEA (CLAS'), (13000, 'EGG TART'), (17000, 'GRAIN CROQUE MONSIEUR')]",42500.0,3,42500,,,50000.0,7500.0,cash,[],published,22,1.0
+dev_receipt_00020.png,train,"[(10000, 'JAMUR'), (5000, 'TAHU')]",16500.0,2,15000,15000.0,1500.0,20000.0,3500.0,cash,[],published,17,1.0
+dev_receipt_00021.png,train,"[(29090, 'Mango Lemon Tea'), (113636, 'Sliders Set'), (86363, 'Chicken Vege Rice Bowl')]",224908.0,3,229089,,20446.0,,,card,[],published,36,1.0
+dev_receipt_00022.png,train,"[(280000, 'RedVelvet Nutella'), (1, 'Large Box')]",308000.0,2,280001,280000.0,28000.0,,,card,[],published,20,1.0
+dev_receipt_00023.png,train,"[(18182, 'BUBBLE GUM')]",20000.0,1,18182,18182.0,1818.0,20000.0,,cash,[],published,14,1.0
+dev_receipt_00024.png,test,"[(11000, 'PAIN AU CHOCOLATE'), (12000, 'CHOCO CUSTARD PASTRY'), (9000, 'MILK PASTRY ROLL'), (13500, 'REAL CHEESE INSIDE BREAD'), (15000, 'SAUSAGE BREAD'), (20000, 'HAM CHEESE FLAT BREAD')]",80500.0,6,80500,,,100000.0,19500.0,cash,[],published,37,1.0
+dev_receipt_00025.png,train,"[(33000, '1Prs Sop Sui Jiao'), (28000, '1Prs Ha Kaou Udng'), (23500, '1Prs Sio May Kpting'), (23000, '1Prs Siomay Kmbinasi'), (30000, '1Prs Leng Hong Kien'), (35500, '1Prs Mie Kgkung Trsi'), (7000, '1Gls Es Teh Tawar')]",207900.0,7,180000,180000.0,18900.0,,,unknown,[],published,50,1.0
+dev_receipt_00026.png,train,"[(5000, 'NASI MERAH/PUTIH'), (8000, 'SAYUR'), (2000, 'KERUPUK/SAMBEL'), (14000, 'AYAM'), (6000, 'MINUMAN KEMASAN/REFILL')]",35000.0,5,35000,,,,,unknown,[],published,25,1.0
+dev_receipt_00027.png,train,"[(16363, 'THAI ICED TEA (L)')]",17999.0,1,16363,16363.0,1636.0,,,unknown,[],published,19,1.0
+dev_receipt_00028.png,train,"[(12000, 'ELEPHANT READ BEAN'), (10000, 'chapsal twister donnut')]",22000.0,2,22000,,,22000.0,0.0,cash,[],published,19,1.0
+dev_receipt_00029.png,test,"[(1, 'Sabun Beras')]",,1,1,30000.0,,50000.0,20000.0,cash,"['items_do_not_reconcile', 'change_inconsistent']",extract_failed,12,1.0
+dev_receipt_00030.png,val,"[(9000, 'REDBEAN BRE/D'), (12000, 'FRANKFRUT S/USAGE ROLL')]",21000.0,2,21000,,,50000.0,29000.0,cash,[],published,15,1.0
+dev_receipt_00031.png,train,"[(24000, 'PREMIUM TOAST PAN BREAD')]",24000.0,1,24000,,,24000.0,0.0,cash,[],published,12,1.0
+dev_receipt_00032.png,train,"[(6000, 'Nasi (MLY)')]",6000.0,1,6000,6000.0,,6000.0,,cash,[],published,12,1.0
+dev_receipt_00033.png,train,"[(20500, 'GRAINS PAN BREAD'), (37000, 'ICED HIBISCUS LYCHEE TEA')]",57500.0,2,57500,,,7500.0,0.0,cash,['change_inconsistent'],quarantined,20,1.0
+dev_receipt_00034.png,train,"[(50500, 'GRILLED BABY POTATO (R'), (76000, 'TRUFFLE CREAM'), (70500, 'CARBONARA'), (46000, 'ORIGINAL BREWED TEA')]",283338.0,4,243000,243000.0,25758.0,,,card,[],published,32,1.0
+dev_receipt_00035.png,train,"[(76500, 'BLACK PEPPER MEATBALL'), (82500, 'QUARTO FORMANGGI PASTA'), (56000, 'GREEN TEA WITH CRUMBLE'), (46000, 'ORIGINAL BREWED TEA')]",304326.0,4,261000,261000.0,27666.0,,,unknown,[],published,32,1.0
+dev_receipt_00036.png,train,"[(17272, 'Soft Ori Top'), (0, 'Top Oreo'), (0, 'Top Oreo'), (0, 'Top Banana')]",18999.0,4,17272,17272.0,1727.0,18999.0,,cash,[],published,22,1.0
+dev_receipt_00037.png,train,"[(13636, 'Ice Lemon Tea'), (50000, 'Gyro Platter Regular')]",70000.0,2,63636,63636.0,6364.0,70000.0,,cash,[],published,20,1.0
+dev_receipt_00038.png,test,"[(20000, 'TT')]",20000.0,1,20000,,,100000.0,80000.0,cash,[],published,10,1.0
+dev_receipt_00039.png,train,"[(26000, 'PKT TELOR/PERKEDEL'), (12000, 'TERONG'), (23000, 'PARU'), (20000, 'SBL GR ATI/AMPLA'), (8000, 'NESTLE ML')]",97900.0,5,89000,89000.0,8900.0,100000.0,2100.0,cash,[],published,28,1.0
+dev_receipt_00040.png,train,"[(95000, 'Gojek Chicken'), (180000, 'Gojek Chicken'), (70000, 'Gojek French')]",379500.0,3,345000,345000.0,34500.0,,,unknown,[],published,30,1.0
+dev_receipt_00041.png,train,"[(150000, 'SOGOGI JAPCHAE'), (105000, 'GONG GIBAB'), (230000, 'CHULPAN CHEESE'), (95000, 'CREAM TEOK PO KI'), (120000, 'EL KEUN'), (620000, 'CHAM KKOT SAL'), (290000, 'U SAM GYEOP'), (390000, 'U SEOL'), (0, 'U SAM GYEOP'), (0, 'ICE COFFE MIX'), (0, 'ICE BLACK COFFE')]",,11,2000000,2000000.0,212460.0,,,card,[],extract_failed,70,1.0
+dev_receipt_00042.png,train,"[(19000, 'STIX CINNAMON'), (17000, 'CINNAMON SUGAR'), (17000, 'TRIPPLE CHEESE')]",53000.0,3,53000,53000.0,,,,card,[],published,21,1.0
+dev_receipt_00043.png,train,"[(272000, 'ROTI UNYIL'), (6000, 'PAPER BAG BESAR')]",278000.0,2,278000,,,300000.0,22000.0,cash,[],published,18,1.0
+dev_receipt_00044.png,train,"[(16363, 'THAI ICED TEA (L)')]",17999.0,1,16363,16363.0,1636.0,,,unknown,[],published,19,1.0
+dev_receipt_00045.png,val,"[(85000, 'AOP Seafood'), (95000, 'Omurice Katsu Curry'), (35000, 'Earl Gray Tea'), (25000, 'Hot Tea')]",287760.0,4,240000,240000.0,26160.0,,,unknown,[],published,26,1.0
+dev_receipt_00046.png,train,"[(22000, 'MARBLE CASTELA')]",22000.0,1,22000,,,22000.0,0.0,cash,[],published,12,1.0
+dev_receipt_00047.png,train,"[(42000, 'Seaweed Chicken'), (0, 'Sedang')]",42000.0,2,42000,,,,8000.0,unknown,[],published,18,1.0
+dev_receipt_00048.png,train,"[(28636, 'SB OR'), (13636, 'Chokocha Flt'), (13636, 'Bbq Bento'), (5592, 'P.Rest')]",61500.0,4,61500,55908.0,,70000.0,8500.0,cash,[],published,28,1.0
+dev_receipt_00049.png,train,"[(22000, 'Nasi CampurBali')]",,1,22000,74000.0,7400.0,81400.0,,cash,['items_do_not_reconcile'],extract_failed,15,1.0
+dev_receipt_00050.png,train,"[(26000, 'CHOCOLATE ECLAIR')]",26000.0,1,26000,,,26000.0,0.0,cash,[],published,10,1.0
+dev_receipt_00051.png,train,"[(47200, 'Round Wagyu (1gr)'), (10000, 'Wagyu Rice Box')]",57200.0,2,57200,57200.0,,,,card,[],published,16,1.0
+dev_receipt_00052.png,train,"[(42000, 'KENTHIR'), (6000, 'KOL GORENG'), (8000, 'TEH MANIS')]",56000.0,3,56000,56000.0,,56000.0,0.0,cash,[],published,20,1.0
+dev_receipt_00053.png,train,"[(11000, 'Large'), (0, 'Rhum'), (20000, 'Pastry Keju'), (0, 'Plastik kcl')]",31000.0,4,31000,,,40000.0,9000.0,cash,[],published,22,1.0
+dev_receipt_00054.png,train,"[(40000, '4003-Blueberry Fuji'), (0, '6001-Plastic Bag Small')]",40000.0,2,40000,,,50000.0,10000.0,cash,[],published,21,1.0
+dev_receipt_00055.png,test,"[(60000, 'Cha Keaw L...'), (60000, 'Cha Keaw L...')]",60000.0,2,120000,,,,,card,['items_do_not_reconcile'],quarantined,18,1.0
+dev_receipt_00056.png,val,"[(20000, 'Thai Iced T. .x1')]",20000.0,1,20000,20000.0,,,20000.0,unknown,[],published,12,1.0
+dev_receipt_00057.png,train,"[(85000, 'SEAFOOD MARINARA'), (85500, 'CREAMY MARINARA SALMON'), (77000, 'LYCHEE ICE TEA')]",288585.0,3,247500,247500.0,26235.0,,,unknown,[],published,25,1.0
+dev_receipt_00058.png,train,"[(25000, 'Viet Milk Coffee')]",25000.0,1,25000,25000.0,,25000.0,0.0,cash,[],published,15,1.0
+dev_receipt_00059.png,train,"[(78000, 'XLB Org Pork 10x'), (65000, 'Sicito Babi'), (58000, 'Hotplate Tahu'), (108000, 'DF Fish Fillet Garlc'), (88000, 'LM Pork Belly'), (38800, 'Siew Mai'), (50000, 'Kwan Yin Cup'), (38000, 'Herbal Jelly'), (38000, 'Onde-Onde')]",664329.0,9,561800,,60394.0,,,unknown,['items_do_not_reconcile'],quarantined,45,1.0
+dev_receipt_00060.png,val,"[(180000, 'VANILLA CHOCO HEART CAKE')]",180000.0,1,180000,,,,,card,[],published,11,1.0
+dev_receipt_00061.png,train,"[(4500, 'Populaire Chocolate'), (3000, 'Paddle Pop Choco Magma')]",8250.0,2,7500,7500.0,750.0,10000.0,50.0,cash,['change_inconsistent'],quarantined,31,1.0
+dev_receipt_00062.png,train,"[(10909, 'French Fries'), (36364, 'Cheese Burger'), (9091, 'Milo')]",62000.0,3,56364,56364.0,5636.0,100000.0,38000.0,cash,[],published,21,1.0
+dev_receipt_00063.png,train,"[(43636, 'ISI CAMPUR'), (8000, 'A.MINERAL BOTOL')]",56800.0,2,51636,,5164.0,110000.0,53200.0,cash,[],published,23,1.0
+dev_receipt_00064.png,train,"[(20000, 'WHOLE WHEAT PAN BREAD')]",20000.0,1,20000,,,100000.0,80000.0,cash,[],published,12,1.0
+dev_receipt_00065.png,val,"[(43636, 'BASO TAHU'), (6000, 'NASI PUTIH')]",54600.0,2,49636,,4964.0,60100.0,5500.0,cash,[],published,23,1.0
+dev_receipt_00066.png,val,"[(7000, 'AIR MINERAL')]",7000.0,1,7000,,,7000.0,,cash,[],published,7,1.0
+dev_receipt_00067.png,val,"[(69091, 'PAKET BER2'), (1, 'BREAD N CHEESE DEL'), (1, 'MAC N CHEESE DEL'), (1, 'PEPSI DEL'), (1, 'P/P THUOSAND ISL DEL'), (1, 'LIPTON ICE TEA DEL')]",76000.0,6,69096,69091.0,6909.0,,,unknown,['items_do_not_reconcile'],quarantined,33,1.0
+dev_receipt_00068.png,val,"[(13000, '2 X'), (26000, 'Honey Mandarin')]",26000.0,2,39000,,,30000.0,4000.0,cash,['items_do_not_reconcile'],quarantined,11,1.0
+dev_receipt_00069.png,val,"[(59500, 'SOTO MEDAN+NASI'), (34500, 'GADO-GADO'), (57500, 'SOTO BETAWI NASI')]",174983.0,3,151500,151500.0,15908.0,,,unknown,[],published,24,1.0
+dev_receipt_00070.png,train,"[(69000, 'KaraageCurryTeishoku'), (19000, 'Lemon Plate'), (15000, 'Ocha Hot')]",121798.0,3,103000,103000.0,11073.0,,,unknown,[],published,25,1.0
+dev_receipt_00071.png,train,"[(19000, 'Dum Dum Thai Coffee'), (1000, 'Ice')]",20000.0,2,20000,20000.0,,50000.0,30000.0,cash,[],published,18,1.0
+dev_receipt_00072.png,train,"[(19000, 'STIX CINNAMON'), (17000, 'TRIPPLE CHEESE')]",36000.0,2,36000,36000.0,,,0.0,card,[],published,19,1.0
+dev_receipt_00073.png,test,"[(20000, 'ICED TT')]",20000.0,1,20000,,,50000.0,30000.0,cash,[],published,9,1.0
+dev_receipt_00074.png,train,"[(20000, 'THAI ICED TEA')]",20000.0,1,20000,20000.0,,20000.0,0.0,cash,[],published,14,1.0
+dev_receipt_00075.png,test,"[(40000, 'KFC Winger HC'), (13636, 'Ori Bento'), (5909, 'Mango Float'), (0, 'F.Wngr GES-HC'), (909, 'CHARGE TA'), (6046, 'P.Rest')]",66500.0,6,66500,60454.0,,100000.0,33500.0,cash,[],published,36,1.0
+dev_receipt_00076.png,test,"[(31000, 'Enting2 Dua Bandeng Ori'), (68000, 'TAHU BAKSO Grg Ayam VC [biji')]",99000.0,2,99000,,,,,card,[],published,26,1.0
+dev_receipt_00077.png,train,"[(58000, 'Cheese Tart')]",58000.0,1,58000,58000.0,5272.0,100000.0,42000.0,cash,[],published,22,1.0
+dev_receipt_00078.png,val,"[(2, 'Mineral Water'), (11000, 'Teh Tawar Dingin'), (116000, 'Soto Betawi'), (9000, 'NASI PUTIH'), (700, 'Servi Charge')]",177870.0,5,136702,0.0,170.0,,,unknown,['items_do_not_reconcile'],quarantined,33,1.0
+dev_receipt_00079.png,test,"[(10000, 'Crab Stick'), (7000, 'Bakso Lobster'), (8000, 'Sawi Putih'), (1, 'Jamur Enoki'), (8000, 'Jamur Kuping'), (2, 'Maling'), (6000, 'Nasi (MLY)')]",72000.0,7,39003,72000.0,,,,card,['items_do_not_reconcile'],quarantined,34,1.0
+dev_receipt_00080.png,train,"[(25000, 'Sate Padang')]",25000.0,1,25000,,,25000.0,,cash,[],published,9,1.0
+dev_receipt_00081.png,train,"[(29091, 'SURIMI'), (42727, 'CREAMY CHK CLS FTC'), (19091, 'MIX 4FUN CHOCOLATE'), (60909, 'GREEN ITSODA PITCHER'), (99091, 'SC/R GRILLED STEAK')]",276000.0,5,250909,250909.0,25091.0,,,unknown,[],published,30,1.0
+dev_receipt_00082.png,val,"[(17000, 'PEARL CHOCO TEA'), (18000, 'GREEN TEA LYCHEE'), (0, 'TUTUP SEAL'), (0, 'CUP OZ'), (35000, 'NET Sales')]",35000.0,5,70000,,,100000.0,65000.0,cash,['items_do_not_reconcile'],quarantined,30,1.0
+dev_receipt_00083.png,train,"[(17000, 'S-Milk tea')]",17000.0,1,17000,17000.0,,17000.0,0.0,cash,[],published,16,1.0
+dev_receipt_00084.png,val,"[(24000, '1 x HAZELNUT CHOCO MT (R)'), (4000, 'PEARL (R)'), (24000, '1 x HAZELNUT CHOCO MT (R)')]",52000.0,3,52000,52000.0,,,,card,[],published,26,1.0
+dev_receipt_00085.png,train,"[(13636, 'Peanut Cheese')]",15000.0,1,13636,13636.0,1364.0,20000.0,5000.0,cash,[],published,15,1.0
+dev_receipt_00086.png,test,"[(26000, 'LEMONADE22OZ')]",26000.0,1,26000,26000.0,,,0.0,unknown,[],published,14,1.0
+dev_receipt_00087.png,train,"[(29000, 'M-Passion Fruit Mac')]",29000.0,1,29000,29000.0,,30000.0,1000.0,cash,[],published,19,1.0
+dev_receipt_00088.png,train,"[(154545, 'PAKET BER4 UP3'), (1, 'BREAD N CHEESE DEL'), (1, 'TUNA DEL'), (1, 'CRABSTICK FUSILLI DEL'), (1, 'LEMON TEA HANGAT DEL'), (1, 'BLACKCURRANT DEL'), (1, 'SC/P THOUSAND IS DEL'), (1, 'SCSC/P BBQ BEEF DEL'), (1, 'CR/P BEEF MAYO DEL'), (1, 'SUNRISE ITALIAN SODA'), (1, 'SUNRISE ITALIAN SODA')]",170000.0,11,154555,154545.0,15455.0,,,unknown,['items_do_not_reconcile'],quarantined,54,1.0
+dev_receipt_00089.png,train,"[(1023, 'Chocochip Walnut'), (6001, 'Plastic Bag Small')]",29000.0,2,7024,,,100000.0,71000.0,cash,['items_do_not_reconcile'],quarantined,24,1.0
+dev_receipt_00090.png,train,"[(70000, 'REGULAR')]",70000.0,1,70000,,,,0.0,unknown,[],published,12,1.0
+dev_receipt_00091.png,train,"[(39091, 'K7 1217'), (909, 'ADD CHICKEN BOX')]",44000.0,2,40000,40000.0,4000.0,50000.0,6000.0,cash,[],published,17,1.0
+dev_receipt_00092.png,train,"[(20000, '<FC Winger HC'), (909, 'CHARGE TA'), (2091, 'P.Rest')]",,3,23000,20909.0,,25000.0,2000.0,cash,"['items_do_not_reconcile', 'change_inconsistent']",extract_failed,24,1.0
+dev_receipt_00093.png,val,"[(1, 'PAKET BER4'), (1, 'BREAD N CHEESE DEL'), (1, 'BREAD N CHEESE DEL'), (1, 'CRABSTICK FUSILLI DEL'), (1, 'LIME SQUASH DEL'), (1, 'LIME SQUASH DEL'), (1, 'P/P SPICY TUNA DEL'), (1, 'P/P THUOSAND ISL DEL'), (1, 'P/P BEEF CORN'), (1, 'SUNRISE ITALIAN SODA'), (1, 'LIPTON ICE TEA DEL'), (18182, 'CHICKEN ROYAL')]",172000.0,12,18193,156364.0,15636.0,,,unknown,['items_do_not_reconcile'],quarantined,60,1.0
+dev_receipt_00094.png,train,"[(69000, ""Emily's Shrimp Scampi""), (7280, 'OTHERS')]",80100.0,2,76280,69000.0,,,0.0,unknown,['items_do_not_reconcile'],quarantined,26,1.0
+dev_receipt_00095.png,val,"[(13636, 'SAYAP'), (13636, 'PAHA BAWAH'), (2700, 'P. Resto')]",30000.0,3,29972,27272.0,,50000.0,20000.0,cash,['items_do_not_reconcile'],quarantined,20,1.0
+dev_receipt_00096.png,test,"[(1, 'Choco Cheese'), (-2045, 'Exclusive Member Car')]",12750.0,2,-2044,13636.0,1159.0,12750.0,,cash,['items_do_not_reconcile'],quarantined,18,1.0
+dev_receipt_00097.png,train,"[(25000, 'Lemon Tea (L)')]",,1,25000,,,30000.0,5000.0,cash,"['items_do_not_reconcile', 'change_inconsistent']",extract_failed,11,1.0
+dev_receipt_00098.png,test,"[(100000, 'Hulk Topper Package')]",,1,100000,,,100000.0,0.0,cash,"['items_do_not_reconcile', 'change_inconsistent']",extract_failed,11,1.0
+dev_receipt_00099.png,train,"[(39000, 'Giant Squid Rp.'), (0, 'C.Finishing - Cut Rp.'), (0, 'B.Spicy Level - Extreme Hot Rp.'), (0, 'A.Flavour- Salt Pepper Rp.')]",39000.0,4,39000,39000.0,,50000.0,,cash,[],published,32,1.0
+test_receipt_00000.png,train,"[(60000, '-TICKET CP')]",60000.0,1,60000,60000.0,5455.0,,,card,[],published,24,1.0
+test_receipt_00001.png,train,"[(46000, 'Y.B.BAT'), (27500, 'Y.BASO PROM')]",91000.0,2,73500,,,91000.0,,cash,['items_do_not_reconcile'],quarantined,12,1.0
+test_receipt_00002.png,train,"[(24000, 'JASMINE MT ( L'), (4000, 'COCONUT JELLY ( L')]",28000.0,2,28000,28000.0,,100000.0,72000.0,cash,[],published,25,1.0
+test_receipt_00003.png,train,"[(11000, 'DONAT GULA')]",11000.0,1,11000,11000.0,,11000.0,,cash,[],published,12,1.0
+test_receipt_00004.png,test,"[(82000, 'ICE BLACKCOFFE'), (61000, 'AVOCADO COFFEE'), (51000, 'CHIKEN KATSU FF')]",174600.0,3,194000,,,200000.0,25400.0,cash,[],published,23,1.0
+test_receipt_00005.png,train,"[(28182, 'TRAD KY TOAST CARTE'), (2818, 'PB-1')]",31000.0,2,31000,28182.0,,31000.0,,cash,[],published,16,1.0
+test_receipt_00006.png,train,"[(13000, 'EGG TART'), (24000, 'CHOCO CUS ARD PASTRY'), (9000, 'REDBEAN BREAD')]",46000.0,3,46000,,,50000.0,4000.0,cash,[],published,19,1.0
+test_receipt_00007.png,train,"[(100000, 'Kupon'), (909, 'ADD CHICKEN BOX')]",111000.0,2,100909,100909.0,10091.0,111000.0,,cash,[],published,16,1.0
+test_receipt_00008.png,train,"[(45455, '[REG] BLACK SAKURA'), (0, 'COOKIE DOH SAUCES'), (0, 'NATA DE COCO')]",50000.0,3,45455,45455.0,4545.0,,,card,[],published,28,1.0
+test_receipt_00009.png,train,"[(36000, 'Bumbu Kaldu Ayam 1')]",,1,36000,36000.0,,50000.0,14000.0,cash,['change_inconsistent'],extract_failed,11,1.0
+test_receipt_00010.png,train,"[(17000, 'CINNAMON SUGAR')]",17000.0,1,17000,17000.0,,20000.0,3000.0,cash,[],published,13,1.0
+test_receipt_00011.png,train,"[(230000, 'BANABERRY FRESH CREAM CAK')]",230000.0,1,230000,,,230000.0,0.0,cash,[],published,12,1.0
+test_receipt_00012.png,train,"[(120000, 'BLUS WANITA'), (0, 'SHOPPING BAG')]",120000.0,2,120000,,,,0.0,unknown,[],published,23,1.0
+test_receipt_00013.png,train,"[(43636, 'BASO KUAH'), (3000, 'A.MINERAL GELAS')]",51300.0,2,46636,,4664.0,52000.0,700.0,cash,[],published,25,1.0
+test_receipt_00014.png,test,"[(38000, 'RedVelvet Cheese Slc'), (55000, 'Chicken Baked Rice'), (65000, 'Fish n Chips'), (35000, 'Mushroom Soup'), (25000, 'Chamomile'), (20000, 'Iced Tea')]",281435.0,6,238000,238000.0,25585.0,200000.0,18565.0,cash,['change_inconsistent'],quarantined,40,1.0
+test_receipt_00015.png,val,"[(25000, 'Lemon Tea (L)'), (38000, 'Caramel Small')]",63000.0,2,63000,,,70000.0,7000.0,cash,[],published,15,1.0
+test_receipt_00016.png,train,"[(59091, '[LG] BLACK SAKURA'), (0, 'LONGAN'), (0, 'ROASTED ALMOND'), (0, 'IVANGGO'), (4545, 'IVINERAL WATER (bundling) 5k')]",70000.0,5,63636,63636.0,6364.0,100000.0,30000.0,cash,[],published,36,1.0
+test_receipt_00017.png,test,"[(25000, ""Goblin's Mace""), (38000, 'Mozarella Hot'), (14000, 'Chili Pepper'), (14000, 'Cheese'), (0, 'Plastik Amook'), (0, 'Plastik Putih')]",91000.0,6,91000,91000.0,,,,card,[],published,37,1.0
+test_receipt_00018.png,train,"[(156000, 'Propolis Cair')]",156000.0,1,156000,,,156000.0,0.0,cash,[],published,11,1.0
+test_receipt_00019.png,train,"[(60000, 'AMBUSH DBL CHS'), (100000, 'AMBUSH CHS BUR'), (160000, 'NET SALES')]",176000.0,3,320000,,16000.0,,,unknown,['items_do_not_reconcile'],quarantined,18,1.0
+test_receipt_00020.png,train,"[(64500, 'cashew nuts chkn'), (79500, 'garlic pepper beef'), (69500, 'red curry beef'), (64500, 'phad thai'), (47600, 'steamed rice')]",377859.0,5,325600,325600.0,34351.0,,,unknown,[],published,33,1.0
+test_receipt_00021.png,train,"[(3000, 'NASI GOR SFD TLR')]",38000.0,1,3000,,,50000.0,12000.0,cash,['items_do_not_reconcile'],quarantined,24,1.0
+test_receipt_00022.png,test,"[(20000, '[MD] SOFT STEAMED CHEESEC'), (20000, '[MD] SOFT STEAMED CHOCOCA')]",40000.0,2,40000,,,100000.0,60000.0,cash,[],published,18,1.0
+test_receipt_00023.png,train,"[(54000, 'TWIST DONUT'), (9000, 'REDBEAN BREAD')]",63000.0,2,63000,,,70000.0,7000.0,cash,[],published,14,1.0
+test_receipt_00024.png,val,"[(56000, '5001-Corn Flakes Cookies'), (62000, '5003-Chokoreto Cookies'), (0, '6002-Plastic Bag Medium')]",118000.0,3,118000,,,,,card,[],published,25,1.0
+test_receipt_00025.png,val,"[(10000, 'TWIST STRAWBERRY DONUT'), (17000, 'TLJ CROQUETTE'), (16000, 'POTATO PEPPER BAGEL')]",43000.0,3,43000,,,50000.0,7000.0,cash,[],published,20,1.0
+test_receipt_00026.png,test,"[(65000, 'esar'), (4000, 'Teh Tawar'), (65000, 'Fu Yung Hai')]",138000.0,3,134000,138000.0,,138000.0,,cash,['items_do_not_reconcile'],quarantined,35,1.0
+test_receipt_00027.png,train,"[(33000, 'PKT AYAM'), (23000, 'GULAI OTAK')]",61600.0,2,56000,56000.0,5600.0,,,unknown,[],published,17,1.0
+test_receipt_00028.png,val,"[(194000, 'SAMGYOPSAL'), (75000, 'SUL LUNG TANG'), (100000, 'MAKOLI'), (38745, 'VAT')]",426195.0,4,407745,369000.0,,,,unknown,['items_do_not_reconcile'],quarantined,22,1.0
+test_receipt_00029.png,train,"[(10909, 'COLD OCHA'), (0, 'ABURA UDON SPICY'), (0, '-KAKE UDON'), (12727, 'SKEWERED SHUMAI'), (12727, 'SKEWERED TOFU ROLL'), (13636, 'EBI TEMPURA'), (28182, 'KITSUNE UDON (KIDS)')]",132636.0,7,78181,,13264.0,,,card,['items_do_not_reconcile'],quarantined,47,1.0
+test_receipt_00030.png,train,"[(28636, 'Kupon')]",31500.0,1,28636,28636.0,2864.0,50000.0,18500.0,cash,[],published,16,1.0
+test_receipt_00031.png,train,"[(85500, 'SALMON PESTO'), (85500, 'SALMON PESTO')]",113886.0,2,171000,85500.0,18126.0,,,unknown,['items_do_not_reconcile'],quarantined,23,1.0
+test_receipt_00032.png,val,"[(24000, 'THAI ICED GREEN TEA')]",24000.0,1,24000,24000.0,,50000.0,26000.0,cash,[],published,15,1.0
+test_receipt_00033.png,train,"[(50500, 'GRILLED BABY POTATO (R'), (67000, 'HOT TUNA'), (67000, 'HOT TUNA')]",148127.0,3,184500,117500.0,19557.0,,,unknown,['items_do_not_reconcile'],quarantined,28,1.0
+test_receipt_00034.png,train,"[(75000, 'Ash Chick Sambal Matah'), (10000, 'Jamur Goreng')]",93500.0,2,85000,85000.0,8500.0,100000.0,6500.0,cash,[],published,21,1.0
+test_receipt_00035.png,test,"[(18000, 'TWIST DONUT'), (11000, 'BANANA DONUT'), (13000, 'CREAMCHEESE BREAD'), (12000, 'FRANKFRUT SAUSAGE ROLL')]",54000.0,4,54000,,,104000.0,50000.0,cash,[],published,23,1.0
+test_receipt_00036.png,train,"[(40000, 'XXL Crispy Chicken'), (0, '- Sedang')]",,2,40000,,,,60000.0,unknown,['items_do_not_reconcile'],extract_failed,18,1.0
+test_receipt_00037.png,test,"[(20000, 'Popcorn Salt (S)')]",20000.0,1,20000,,,50000.0,30000.0,cash,[],published,11,1.0
+test_receipt_00038.png,train,"[(78000, 'XLB Org Pork'), (65000, 'Sicito Babi'), (58000, 'Hotplate Tahu'), (108000, 'DF Fish Fillet Garlc'), (88000, 'LM Pork Belly'), (38800, 'Siew Mai'), (50000, 'Kwan Yin Cup'), (38000, 'Herbal Jelly'), (38000, 'Onde-Onde')]",664329.0,9,561800,,60394.0,,,unknown,['items_do_not_reconcile'],quarantined,51,1.0
+test_receipt_00039.png,train,"[(1944000, 'PCS'), (975000, 'PCS'), (972000, 'PCS')]",,3,3891000,,,,,card,['items_do_not_reconcile'],extract_failed,56,1.0
+test_receipt_00040.png,test,"[(54000, 'Snack Lestari All'), (14000, 'mer,Daging,abon,keju,cokelat,dll')]",68000.0,2,68000,,,100000.0,32000.0,cash,[],published,20,1.0
+test_receipt_00041.png,train,"[(47619, 'Chicken Maryland'), (30303, 'Cappucino (Hot/Iced)'), (34632, 'Naga Lychee Juice'), (30303, 'Cafe Latte'), (30303, 'Hot Chocolate Marshmallo'), (43290, 'Chicken Cesar Salad'), (12987, 'Mineral Water'), (12987, 'Mineral Water'), (25974, 'Lychee/Peach/Lemon/Mango'), (47619, 'Chicken Maryland')]",,10,316017,316017.0,,,,unknown,[],extract_failed,41,1.0
+test_receipt_00042.png,train,"[(15000, 'Chicken HCC. 1Pcs'), (1500, 'P.Rest')]",16500.0,2,16500,15000.0,,50000.0,33500.0,cash,[],published,20,1.0
+test_receipt_00043.png,test,"[(165000, 'Pcs Cheese Tart'), (6, 'Box of')]",165000.0,2,165006,165000.0,15000.0,200000.0,35000.0,cash,['items_do_not_reconcile'],quarantined,30,1.0
+test_receipt_00044.png,train,"[(30000, 'Combo')]",30000.0,1,30000,,,50000.0,20000.0,cash,[],published,10,1.0
+test_receipt_00045.png,train,"[(25000, 'Lemon Tea (L).'), (28000, 'Mike Ike Original'), (28000, 'Mike Berry'), (7000, 'Roti Keju Manis.')]",88000.0,4,88000,,,0.0,,unknown,[],published,27,1.0
+test_receipt_00046.png,train,"[(20000, 'S-Bubble Milk Tea'), (20000, 'S-Caramel Milk Tea')]",40000.0,2,40000,,,40000.0,0.0,cash,[],published,20,1.0
+test_receipt_00047.png,train,"[(45000, 'COPIA /GB'), (0, 'PLASTIC BAG RED CENTRAL SI'), (18000, 'COPIA /GB')]",3.0,3,63000,,,,,card,[],published,36,1.0
+test_receipt_00048.png,val,"[(25000, 'S-Hazelnut KOI Cafe')]",25000.0,1,25000,22728.0,2272.0,100000.0,75000.0,cash,[],published,19,1.0
+test_receipt_00049.png,train,"[(12000, 'Ptgs Eggtart'), (11000, 'Choco Melt')]",23000.0,2,23000,23000.0,,50000.0,27000.0,cash,[],published,22,1.0
+test_receipt_00050.png,test,"[(17727, 'Superice Cauburry'), (17727, 'SubTulal')]",19500.0,2,35454,,1773.0,,80500.0,unknown,['items_do_not_reconcile'],quarantined,14,1.0
+test_receipt_00051.png,train,"[(165460, '(TA) NASI GRG TERI'), (40456, '(TA) BIHUN GORENG'), (42274, '(TA) KWETIAW SEAFOOD'), (55456, '(TA) NASI GORENG')]",334000.0,4,303646,,30365.0,,,card,['items_do_not_reconcile'],quarantined,39,1.0
+test_receipt_00052.png,val,"[(20000, 'THAI ICED TEA'), (20000, 'THAI ICED TEA')]",40000.0,2,40000,40000.0,,100000.0,60000.0,cash,[],published,20,1.0
+test_receipt_00053.png,train,"[(42000, 'Pecel Komplit Nasi'), (47000, 'SOTO KUDUS'), (18000, 'Mineral Water'), (5350, 'Servi Charge')]",123585.0,4,112350,107000.0,11235.0,,,unknown,['items_do_not_reconcile'],quarantined,27,1.0
+test_receipt_00054.png,train,"[(10000, 'KACANG MERAH')]",10000.0,1,10000,10000.0,,10000.0,,cash,[],published,9,1.0
+test_receipt_00055.png,train,"[(22000, 'APPLE CINNAMON PASTRY'), (32000, 'ROYAL CHEESE TART')]",54000.0,2,54000,,,,,card,[],published,14,1.0
+test_receipt_00056.png,train,"[(8181, 'AIR MINERAL')]",8999.0,1,8181,8181.0,818.0,10000.0,1001.0,cash,[],published,13,1.0
+test_receipt_00057.png,train,"[(20000, 'ICED TT'), (22000, 'ICED GT')]",,2,42000,,,42000.0,,cash,['items_do_not_reconcile'],extract_failed,8,1.0
+test_receipt_00058.png,val,"[(55000, 'PHO BO TAI')]",60500.0,1,55000,55000.0,5500.0,100000.0,39500.0,cash,[],published,19,1.0
+test_receipt_00059.png,train,"[(78000, 'Tahu Isi'), (30000, 'Tea'), (297490, 'Kepiting 7-8.4ons Chilly'), (47500, 'Udang Telur Asin Regular'), (45000, 'Kailan Rasa'), (25000, 'Mantau pcs'), (16000, 'Sweet Tea'), (42000, 'Nasi Putih'), (37500, 'Mantau pcs')]",680500.0,9,618490,618490.0,61849.0,,,unknown,[],published,59,1.0
+test_receipt_00060.png,train,"[(1, 'Topping Milo Sparkle (untuk Po'), (1250, 'rsi)'), (-14, 'Bola Ubi Mini Original Pcs')]",26250.0,3,1237,26250.0,,,,unknown,['items_do_not_reconcile'],quarantined,28,1.0
+test_receipt_00061.png,train,"[(6500, 'TALAM UNGU'), (8000, 'AMOUNT'), (8000, 'AREM AREM'), (-3200, 'AMOUNT'), (18000, 'LEMPER'), (-7200, 'AMOUNT'), (0, 'MIKA SEDANG'), (0, 'PLASTIK KECIL'), (5000, 'TEH KOTAK')]",24500.0,9,35100,24500.0,,,,card,['items_do_not_reconcile'],quarantined,53,1.0
+test_receipt_00062.png,train,"[(18000, 'XXI Java Tea (M)'), (30000, 'Combo')]",48000.0,2,48000,,,50000.0,2000.0,cash,[],published,16,1.0
+test_receipt_00063.png,train,"[(19000, 'Kopi Susu Kampung.'), (0, 'Kopi Susu Kampung Less Ice'), (38000, 'Kopi Susu Kampung.')]",57000.0,3,57000,57000.0,,60000.0,3000.0,cash,[],published,26,1.0
+test_receipt_00064.png,test,"[(16000, 'SINGLE SCOOP')]",16000.0,1,16000,,,,34000.0,unknown,[],published,9,1.0
+test_receipt_00065.png,val,"[(13000, 'Bubur Polos Telur')]",13000.0,1,13000,13000.0,,,,unknown,[],published,13,1.0
+test_receipt_00066.png,train,"[(36364, 'PILLOW DURIA'), (0, 'PLASTIK'), (3636, 'AMOUNT')]",40000.0,3,40000,36364.0,,50000.0,10000.0,cash,[],published,19,1.0
+test_receipt_00067.png,train,"[(2005, 'CHEESE JOHN')]",9500.0,1,2005,,,9500.0,,cash,['items_do_not_reconcile'],quarantined,14,1.0
+test_receipt_00068.png,train,"[(20000, 'ICED TT')]",20000.0,1,20000,,,50000.0,30000.0,cash,[],published,9,1.0
+test_receipt_00069.png,train,"[(18000, '[MD] SOFT MORNING ROLL'), (20000, 'REAL HONEY PANCAKE BREAD'), (36000, 'CUSTARD BRIOCHE')]",74000.0,3,74000,,,100000.0,26000.0,cash,[],published,22,1.0
+test_receipt_00070.png,val,"[(432000, 'UDANG RE'), (2, '=*LARGE*=='), (108000, 'AYM GR JUN NJAN'), (172000, 'SAPO TH SEAFOOD'), (222000, 'POCAI'), (2, '=*MEDIUM*='), (163000, 'GURAME FILLET M'), (116000, 'BIHUN GORENG JJ'), (60000, 'ICED TEA'), (70000, 'NASI PUTIH'), (1213000, 'FOOD'), (60000, 'BEVERAGES'), (70000, 'OTHERS'), (1565938, 'DU')]",,14,4251942,1343000.0,142358.0,,,unknown,['items_do_not_reconcile'],extract_failed,66,1.0
+test_receipt_00071.png,train,"[(1, 'Cuka Apel Tetes')]",,1,1,198000.0,,200200.0,22000.0,cash,"['items_do_not_reconcile', 'change_inconsistent']",extract_failed,12,1.0
+test_receipt_00072.png,test,"[(15909, 'Choco Devil')]",17500.0,1,15909,15909.0,1591.0,,20000.0,unknown,[],published,14,1.0
+test_receipt_00073.png,test,"[(22000, '1001-Choco Bun'), (0, '6001-Plastic Bag Small')]",,2,22000,,,25000.0,,cash,['items_do_not_reconcile'],extract_failed,21,1.0
+test_receipt_00074.png,val,"[(32000, 'BLACKCURRANT'), (32000, 'SPRITE'), (64000, 'BEVERAGE'), (85000, 'GRILLED CALAMARI'), (129000, 'DINE FOR'), (214000, 'FOOD')]",330264.0,6,556000,278000.0,30024.0,,,unknown,['items_do_not_reconcile'],quarantined,40,1.0
+test_receipt_00075.png,train,"[(29091, 'CHOCO PUFF'), (42727, 'CREAMY BEEF CLS FTC'), (34545, 'NEW ORIENTAL CHK RICE'), (54545, 'LIPTON PITCHER'), (47273, 'SC/P SUPER SUPREME'), (48182, 'CB/P BLACK PEPP BEEF')]",282000.0,6,256363,256363.0,25637.0,,,unknown,[],published,37,1.0
+test_receipt_00076.png,train,"[(46000, 'BASO TAHU'), (6000, 'NASI PUTIH'), (46000, 'BASO TAHU'), (12000, 'NASI PUTIH'), (110000, 'ASH')]",,5,220000,,,,,unknown,['items_do_not_reconcile'],extract_failed,18,1.0
+test_receipt_00077.png,val,"[(17000, 'TRIPPLE CHEESE')]",17000.0,1,17000,17000.0,,22000.0,5000.0,cash,[],published,16,1.0
+test_receipt_00078.png,train,"[(25000, 'Lemon Tea (L)'), (5000, 'Extra Jelly Lychee')]",30000.0,2,30000,,,30000.0,0.0,cash,[],published,16,1.0
+test_receipt_00079.png,train,"[(22000, '1001-Choco Bun'), (0, '6001-Plastic Bag Small')]",,2,22000,,,,,unknown,['items_do_not_reconcile'],extract_failed,16,1.0
+test_receipt_00080.png,train,"[(25000, 'Viet Milk Coffee')]",25000.0,1,25000,25000.0,,25000.0,0.0,cash,[],published,15,1.0
+test_receipt_00081.png,train,"[(28000, '3002-Kyoto Choco Mochi'), (22000, '1001-Choco Bun'), (0, '6001-Plastic Bag Small')]",50000.0,3,50000,,,,,unknown,[],published,22,1.0
+test_receipt_00082.png,val,"[(115000, 'Chocolate Log Cake'), (60000, 'Snowman Cake Chocolate'), (210000, 'Strawberry Log Cake')]",385000.0,3,385000,385000.0,,,0.0,card,[],published,30,1.0
+test_receipt_00083.png,train,"[(20909, 'COOKIES AND CREAM')]",23000.0,1,20909,20909.0,2091.0,25000.0,2000.0,cash,[],published,17,1.0
+test_receipt_00084.png,train,"[(12000, 'Kroket'), (24000, 'Arem Arem')]",39600.0,2,36000,36000.0,3600.0,,,unknown,[],published,24,1.0
+test_receipt_00085.png,train,"[(30000, 'Nasi Putih'), (7000, 'Nasi Tambah'), (40000, 'Ayam Pop'), (11000, 'Samabal SP'), (1, 'Sambal Gabus Asin Cb'), (15000, 'Kerupuk Kuah'), (28500, 'Ikan Bawal Besa'), (10000, 'Telur Dadar'), (7000, 'Teh Es'), (9000, 'Teh Manis'), (4000, 'Es Batu')]",20000.0,11,161501,179500.0,17950.0,197450.0,,cash,['items_do_not_reconcile'],quarantined,64,1.0
+test_receipt_00086.png,val,"[(9500, 'Cheezemania'), (12500, 'Mamamia')]",22000.0,2,22000,22000.0,,52000.0,30000.0,cash,[],published,20,1.0
+test_receipt_00087.png,train,"[(36500, 'PHOTAI CHIN')]",40150.0,1,36500,36500.0,3650.0,,,card,[],published,18,1.0
+test_receipt_00088.png,train,"[(19000, 'STIX ECLAIRS'), (28000, 'ALMOND CREAM CHEESE')]",47000.0,2,47000,47000.0,,,0.0,card,[],published,22,1.0
+test_receipt_00089.png,train,"[(40000, 'XXL Crispy Chicken'), (0, 'Pedas sedikit')]",40000.0,2,40000,,,,10000.0,unknown,[],published,19,1.0
+test_receipt_00090.png,train,"[(26818, 'CIRENG PANDAWA')]",29500.0,1,26818,26818.0,2681.0,29500.0,,cash,[],published,18,1.0
+test_receipt_00091.png,train,"[(15000, 'BAKSO BNGKS'), (6000, 'GORENGAN')]",21000.0,2,21000,,,30000.0,9000.0,cash,[],published,13,1.0
+test_receipt_00092.png,train,"[(240000, '- TICKET CP')]",240000.0,1,240000,,,250000.0,10000.0,cash,[],published,13,1.0
+test_receipt_00093.png,train,"[(16363, 'THAI ICED TEA (L)')]",17999.0,1,16363,16363.0,1636.0,,,unknown,[],published,20,1.0
+test_receipt_00094.png,train,"[(28000, 'TAHU GORENG'), (17000, 'CAKWE'), (63000, 'PHO TAI CHIN(R)'), (11000, 'TEA'), (8330, 'Serv.')]",140063.0,5,127330,119000.0,12733.0,,,card,['items_do_not_reconcile'],quarantined,30,1.0
+test_receipt_00095.png,test,"[(43181, 'BASO TAHU'), (13000, 'ES JERUK')]",61799.0,2,56181,,5618.0,62000.0,201.0,cash,[],published,23,1.0
+test_receipt_00096.png,train,"[(0, 'BBQ Chicken'), (1, '- Tidak Pedas')]",9000.0,2,1,,,,50000.0,unknown,['items_do_not_reconcile'],quarantined,18,1.0
+test_receipt_00097.png,test,"[(40000, 'BUBUR GO'), (6000, 'PUYUH GO'), (9000, 'SATE ATI GO')]",55000.0,3,55000,,,55000.0,,cash,[],published,19,1.0
+test_receipt_00098.png,train,"[(79000, 'BLACK PAPPER MEATBALL PAS'), (77000, 'TRUFFLE CREAM'), (59000, 'EARL GREY MILK TEA')]",250690.0,3,215000,215000.0,22790.0,,,unknown,[],published,27,1.0
+test_receipt_00099.png,train,"[(68180, 'FL-Xmas 30 Off'), (0, 'PAKET SLICES'), (0, ' FL Cake - French'), (0, 'PAKET SLICES'), (0, 'FL Cake - Green'), (0, 'PAKET SLICES'), (0, 'FL Cake - Belgium'), (0, 'BIAYA TAMBAHAN'), (0, 'BIAYA CC')]",75000.0,9,68180,68180.0,6818.0,0.0,0.0,card,[],published,59,1.0

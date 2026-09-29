@@ -1,5 +1,5 @@
 #!/bin/bash
-# Read-only role for dashboards (Metabase) and the agent. It sees the published marts and the
+# Read-only role for downstream readers (dashboards, analysts). It sees the published marts and the
 # pipeline's bookkeeping, never `raw` or `raw_restricted`. dbt grants SELECT on each mart table
 # it builds (dbt_project.yml), so the grant survives rebuilds.
 # A shell script rather than .sql so the password comes from ANALYST_PASSWORD (.env).

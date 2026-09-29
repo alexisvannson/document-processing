@@ -19,11 +19,10 @@ TROCR_LR ?= 5e-5
 CORRUPT ?= 0.0
 OCR ?= ground_truth
 RECOGNIZER ?= checkpoints/trocr-printed/best
-Q ?= How many receipts were published, and how fresh is the data?
 COMPOSE := docker compose $(if $(wildcard .env),--env-file .env) -f data_platform/infra/docker-compose.yml
 
 .DEFAULT_GOAL := help
-.PHONY: help setup traindbnet traintrocr up down psql pipeline dbt dashboard trigger ask
+.PHONY: help setup traindbnet traintrocr ocr table up down psql pipeline dbt
 
 help: ## Show this help
 	@echo "Usage: make <target> [VAR=value]"
@@ -51,8 +50,7 @@ $(PY):
 	$(PYTHON) -m venv $(VENV)
 	$(PY) -m pip install --upgrade pip
 
-# --prefer-binary: take the newest version with a prebuilt wheel rather than compiling one
-# (the latest cryptography, pulled in by google-genai, has no Intel-Mac wheel).
+# --prefer-binary: take the newest version with a prebuilt wheel rather than compiling one.
 $(VENV)/.installed: requirements.txt | $(PY)
 	$(PY) -m pip install --prefer-binary -r requirements.txt
 	@touch $@
@@ -65,7 +63,15 @@ traintrocr: setup ## Train the ViT -> BERT text recognizer on word crops (checkp
 	$(PY) -m training.train_trocr --epochs $(TROCR_EPOCHS) --batch-size $(TROCR_BATCH_SIZE) --lr $(TROCR_LR) \
 		--num-workers $(NUM_WORKERS)
 
-up: ## Start Postgres, Metabase and Airflow (ports in .env: 5433, 3000, 8080)
+ocr: setup ## OCR one image: make ocr IMAGE=photo.jpg (prints the words, saves photo_ocr.png with the boxes)
+	@test -n "$(IMAGE)" || { echo "Usage: make ocr IMAGE=path/to/image.jpg"; exit 1; }
+	$(PY) -m ocr.inference "$(IMAGE)" --recognizer $(RECOGNIZER)
+
+table: setup ## One DataFrame of (amount, item) tuples per receipt, no database: make table [OCR=model SPLIT=test]
+	$(PY) -m data_platform.pipeline.table results/receipts_$(OCR)$(if $(SPLIT),_$(SPLIT)) --ocr $(OCR) \
+		--recognizer $(RECOGNIZER) $(if $(SPLIT),--split $(SPLIT))
+
+up: ## Start Postgres (port POSTGRES_PORT in .env, default 5433)
 	$(COMPOSE) up -d --wait
 
 down: ## Stop the containers (data is kept in the pgdata volume)
@@ -79,12 +85,3 @@ pipeline: setup ## Run ingest -> OCR -> redact -> extract into Postgres (OCR=mod
 
 dbt: setup ## Build the dbt models and run their tests (staging -> marts, quarantine)
 	$(VENV)/bin/dbt build --project-dir data_platform/dbt --profiles-dir data_platform/dbt
-
-dashboard: ## Create/refresh the Metabase "Receipts" dashboard (after `make up`)
-	$(PY) data_platform/infra/metabase/setup.py
-
-trigger: ## Trigger a run of the receipts_daily Airflow DAG
-	$(COMPOSE) exec airflow airflow dags trigger receipts_daily
-
-ask: setup ## Ask the LangGraph agent a question: make ask Q="..." (needs GEMINI_API_KEY)
-	$(PY) -m data_platform.agent.graph --verbose "$(Q)"

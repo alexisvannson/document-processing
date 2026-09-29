@@ -1,12 +1,12 @@
 """
-Bookkeeping in ops.pipeline_runs. Used by the CLI (pipeline/run.py) and by the Airflow DAG,
-whose callbacks run in Airflow's own environment: keep this module's imports to psycopg.
+Bookkeeping in ops.pipeline_runs, used by the CLI (pipeline/run.py). A scheduler would call it
+from its own environment, so keep this module's imports to psycopg.
 """
 from psycopg.types.json import Jsonb
 
 
 def start_run(conn, run_id, params=None):
-    """Registers the run; a no-op when it already exists (an Airflow task retried)."""
+    """Registers the run; a no-op when it already exists (a retried scheduler task)."""
     conn.execute(
         "INSERT INTO ops.pipeline_runs (run_id, params) VALUES (%s, %s) ON CONFLICT (run_id) DO NOTHING",
         (run_id, Jsonb(params or {})),

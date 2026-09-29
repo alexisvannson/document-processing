@@ -1,6 +1,6 @@
 -- Warehouse layout
 --   ops             what the pipeline did (runs, per-document status)
---   raw_restricted  unredacted OCR output, never exposed to analysts or the agent
+--   raw_restricted  unredacted OCR output, never exposed to analysts
 --   raw             redacted OCR tokens + extracted fields, the input to dbt
 --   staging, marts  built by dbt
 

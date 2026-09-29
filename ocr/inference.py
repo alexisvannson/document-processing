@@ -97,12 +97,57 @@ class OCRModel:
                 confidences.append(float(lp[k].mean().exp()) if k.any() else 0.0)
         return texts, confidences
 
-    def read(self, image):
+    def read(self, image, num_beams=None):
         """Words of an RGB image: [{"text", "polygon", "confidence"}], skipping boxes read as empty."""
         boxes = self.detect(image)
-        texts, confidences = self.recognize(image, boxes) if boxes else ([], [])
+        texts, confidences = self.recognize(image, boxes, num_beams) if boxes else ([], [])
         return [
             {"text": text.strip(), "polygon": np.round(box).astype(int).tolist(), "confidence": round(conf, 4)}
             for box, text, conf in zip(boxes, texts, confidences)
             if text.strip()
         ]
+
+
+def main():
+    import argparse
+    import json
+
+    import cv2
+
+    parser = argparse.ArgumentParser(description="OCR one image: print its words and save a copy with the boxes drawn")
+    parser.add_argument("image")
+    parser.add_argument("--dbnet", default="checkpoints/dbnet_best.pt")
+    parser.add_argument("--recognizer", default="checkpoints/trocr-printed/best")
+    parser.add_argument("--beams", type=int, default=None, help="Beam search width (default: greedy)")
+    parser.add_argument("--out", default=None,
+                        help="Annotated image path (default: <image name>_ocr.png in the current directory)")
+    parser.add_argument("--json", action="store_true", help="Print the words as JSON instead of a table")
+    args = parser.parse_args()
+
+    bgr = cv2.imread(args.image)
+    if bgr is None:
+        raise SystemExit(f"Can't read image {args.image}")
+    image = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+
+    words = OCRModel(args.dbnet, args.recognizer).read(image, num_beams=args.beams)
+    # roughly top to bottom, then left to right (DBNet returns boxes in no particular order)
+    words.sort(key=lambda w: (min(y for _, y in w["polygon"]), min(x for x, _ in w["polygon"])))
+
+    if args.json:
+        print(json.dumps(words, ensure_ascii=False, indent=2))
+    else:
+        for w in words:
+            print(f"{w['confidence']:.3f}  {w['text']}")
+        print(f"{len(words)} words")
+
+    for w in words:  # green if confident, red if worth a second look (see eval_recognizers.ipynb, section 3)
+        color = (0, 180, 0) if w["confidence"] >= 0.9 else (0, 0, 255)
+        cv2.polylines(bgr, [np.array(w["polygon"], dtype=np.int32)], isClosed=True, color=color, thickness=2)
+    # not next to the input: the pipeline ingests every image in dataset_receipt/images/
+    out = args.out or f"{os.path.splitext(os.path.basename(args.image))[0]}_ocr.png"
+    cv2.imwrite(out, bgr)
+    print(f"boxes drawn on {out} (red: confidence < 0.9)")
+
+
+if __name__ == "__main__":
+    main()

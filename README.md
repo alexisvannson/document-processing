@@ -24,10 +24,49 @@ The recognizers compared (`notebooks/eval_recognizers.ipynb`, all run through th
 | `trocr-base-printed` fine-tuned on the receipts (greedy) | 0.032 | 90.3% | 0.008 |
 | `trocr-base-printed` fine-tuned on the receipts (beam 4) | **0.031** | **90.5%** | **0.008** |
 
-**What the OCR error costs downstream.** I also ran the OCR through a small extraction pipeline, which checks
-that each receipt's items add up to its total. Test receipts that pass: **52%** with my OCR vs **60%** with
-perfect (ground-truth) OCR. On receipts that pass in both runs, the extracted total is the same **99%** of the time
-(`notebooks/eval_system.ipynb`, see [Beyond the brief](#beyond-the-brief-a-data-platform-around-the-ocr)).
+**What the OCR error costs downstream.** The extraction below checks that each receipt's items add up to its
+total. On the 30 test receipts, **18 pass with my OCR vs 19 with perfect (ground-truth) OCR**. On the 16 that pass
+in both runs, the item amounts are identical in all 16 (`results/receipts_model_test.pkl` vs
+`results/receipts_ground_truth.pkl`).
+
+## Extraction: amounts and items per receipt
+
+`make table` turns the OCR words into one DataFrame, one row per receipt, with no database
+(`data_platform/pipeline/table.py`). The `items` column is a list of `(amount, item)` tuples:
+
+```
+            file_name  items                                                            total    outcome
+dev_receipt_00000.png  [(16500, REAL GANACHE), (13000, EGG TART), (16000, PIZZA TOAST)]  45500   published
+dev_receipt_00001.png  [(23000, Kopi Susu Kolonel)]                                      23000   published
+test_receipt_00000.png [(60000, -TICKET CP)]                                             60000   published
+```
+
+```bash
+make table                          # ground-truth words, 200 receipts -> results/receipts_ground_truth.pkl/.csv
+make table OCR=model SPLIT=test     # the trained OCR on the 30 test receipts -> results/receipts_model_test.pkl/.csv
+```
+
+The `.pkl` keeps the tuples as tuples; the `.csv` is for reading. How a receipt becomes a row:
+
+1. **Redact** phone and card numbers, emails and names (`redact.py`).
+2. **Group the words into lines**, after deskewing with the median slope of the words (`lines.py`).
+3. **Label each line** by keyword, in English and Indonesian: item, subtotal, tax, total, cash, change…
+   (`extract.py`). A label misread by one letter still counts (`TUAI` → TUNAI), but payment labels only below
+   the total, where no items are listed. A number opening a line before the name is a product code, not the price.
+4. **Check the arithmetic**: the items add up to the subtotal or a total, and cash − total = change. A receipt
+   passes (`published`), fails a check (`quarantined`, with `failed_checks`), or has no readable total
+   (`extract_failed`).
+
+| Words from | Receipts | Pass | Fail a check | No readable total |
+| --- | --- | --- | --- | --- |
+| ground truth | all 200 | 146 | 38 | 16 |
+| ground truth | 30 test | 19 | 8 | 3 |
+| **my OCR (DBNet + TrOCR)** | **30 test** | **18** | 12 | 0 |
+
+The checks are what make the table usable without reading every receipt: a receipt only passes if its amounts are
+consistent. With my OCR, the total matches the ground-truth run on 24 of the 27 test receipts where both found one.
+A garbled label is the typical loss: on `test_receipt_00095`, `KEM&WI` (KEMBALI, "change") is too far from any
+keyword to recover, so the change is missing while the items and total are right.
 
 ## Approach
 
@@ -122,7 +161,7 @@ notebooks/
   eval_recognizers.ipynb      compare the recognizers on test, error analysis, end to end with DBNet
   eval_system.ipynb           the OCR inside the extraction pipeline vs perfect OCR
 results/              per-receipt outputs of the pipeline runs, read by eval_system.ipynb
-data_platform/        optional extra: pipeline, dbt, Airflow, Metabase, agent (see below)
+data_platform/        optional extra: extraction pipeline, Postgres, dbt checks (see below)
 ```
 
 Not in git: `dataset_receipt/` (the data) and `checkpoints/` (trained weights).
@@ -147,14 +186,23 @@ The fine-tuned recognizer is trained in `notebooks/train_trocr_printed.ipynb` (C
 
 **Run the OCR on an image**
 
+```bash
+make ocr IMAGE=photo.jpg
+```
+
+It prints each word with its confidence, top to bottom, and saves `photo_ocr.png` in the current folder, with the
+boxes drawn: green if the confidence is at least 0.9, red if it's below and worth a second look. Called directly,
+`.venv/bin/python -m ocr.inference photo.jpg` also takes `--beams 4`, `--json` and `--out`.
+
+From Python:
+
 ```python
 import cv2
 from ocr.inference import OCRModel
 
-ocr = OCRModel("checkpoints/dbnet_best.pt", "checkpoints/trocr-printed/best")
-image = cv2.cvtColor(cv2.imread("dataset_receipt/images/test_receipt_00000.png"), cv2.COLOR_BGR2RGB)
-boxes = ocr.detect(image)
-texts, confidences = ocr.recognize(image, boxes, num_beams=4)
+ocr = OCRModel()  # checkpoints/dbnet_best.pt + checkpoints/trocr-printed/best
+image = cv2.cvtColor(cv2.imread("photo.jpg"), cv2.COLOR_BGR2RGB)
+words = ocr.read(image)  # [{"text", "confidence", "polygon"}, ...]
 ```
 
 **Evaluate:** `notebooks/eval_recognizers.ipynb` runs in a few minutes on a Colab GPU, or about an hour on a CPU.
@@ -179,9 +227,9 @@ in bad conditions and contain personal data:
 
 - a **pipeline** that runs the OCR on each receipt, redacts personal data, and extracts the items and totals into
   Postgres;
-- **dbt** checks that publish a receipt only if its items add up to its total, and put the rest in quarantine;
-- **Airflow** to run it daily, a **Metabase** dashboard, and a **LangGraph** agent that answers questions in plain
-  English.
+- **dbt** checks that publish a receipt only if its items add up to its total, and put the rest in quarantine.
 
 This is where the downstream numbers in [Results](#results) come from. Running the extraction on perfect OCR and
 on my OCR, with everything else identical, isolates the cost of OCR errors (`notebooks/eval_system.ipynb`).
+How I'd add scheduling (Airflow), monitoring (Metabase) and a question-answering agent (LangGraph) for a real
+deployment is described in [`data_platform/README.md`](data_platform/README.md#how-id-deploy-it), not built.

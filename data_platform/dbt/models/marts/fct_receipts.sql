@@ -1,4 +1,4 @@
--- Receipts that passed every check: the trusted table for dashboards and the agent.
+-- Receipts that passed every check: the trusted table for downstream readers.
 select
     doc_id,
     file_name,

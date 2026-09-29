@@ -1,4 +1,4 @@
--- Receipts that failed a check, with the reasons, for review (by a person or the review agent).
+-- Receipts that failed a check, with the reasons, for review (by a person).
 select
     doc_id,
     file_name,

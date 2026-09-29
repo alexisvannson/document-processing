@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument("--reset", action="store_true",
                         help="Send every document back to `pending`, to reprocess them all")
     parser.add_argument("--run-id", default=None,
-                        help="Record the steps under this run, owned by the caller (Airflow starts, fails and"
+                        help="Record the steps under this run, owned by the caller (a scheduler starts, fails and"
                              " finishes it). Without it the CLI creates and closes its own run.")
     return parser.parse_args()
 
