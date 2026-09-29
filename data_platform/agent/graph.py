@@ -19,7 +19,7 @@ from google import genai
 from google.genai import errors, types
 from langgraph.graph import END, START, StateGraph
 
-from agent.tools import TOOLS, connect, data_status, execute, schema_description, to_json
+from data_platform.agent.tools import TOOLS, connect, data_status, execute, schema_description, to_json
 
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")  # pinned; Pro models have no free-tier quota
 # Used when MODEL stays overloaded (503) after the SDK's retries, which is common on the free tier.

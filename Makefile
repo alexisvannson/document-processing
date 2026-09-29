@@ -18,9 +18,9 @@ TROCR_BATCH_SIZE ?= 16
 TROCR_LR ?= 5e-5
 CORRUPT ?= 0.0
 OCR ?= ground_truth
-RECOGNIZER ?= checkpoints/trocr/best
+RECOGNIZER ?= checkpoints/trocr-printed/best
 Q ?= How many receipts were published, and how fresh is the data?
-COMPOSE := docker compose $(if $(wildcard .env),--env-file .env) -f infra/docker-compose.yml
+COMPOSE := docker compose $(if $(wildcard .env),--env-file .env) -f data_platform/infra/docker-compose.yml
 
 .DEFAULT_GOAL := help
 .PHONY: help setup traindbnet traintrocr up down psql pipeline dbt dashboard trigger ask
@@ -75,16 +75,16 @@ psql: ## Open a psql shell on the warehouse
 	$(COMPOSE) exec postgres psql -U pipeline -d warehouse
 
 pipeline: setup ## Run ingest -> OCR -> redact -> extract into Postgres (OCR=model for the trained models)
-	$(PY) -m pipeline.run --reset --ocr $(OCR) --recognizer $(RECOGNIZER) --corrupt $(CORRUPT)
+	$(PY) -m data_platform.pipeline.run --reset --ocr $(OCR) --recognizer $(RECOGNIZER) --corrupt $(CORRUPT)
 
 dbt: setup ## Build the dbt models and run their tests (staging -> marts, quarantine)
-	$(VENV)/bin/dbt build --project-dir dbt --profiles-dir dbt
+	$(VENV)/bin/dbt build --project-dir data_platform/dbt --profiles-dir data_platform/dbt
 
 dashboard: ## Create/refresh the Metabase "Receipts" dashboard (after `make up`)
-	$(PY) infra/metabase/setup.py
+	$(PY) data_platform/infra/metabase/setup.py
 
 trigger: ## Trigger a run of the receipts_daily Airflow DAG
 	$(COMPOSE) exec airflow airflow dags trigger receipts_daily
 
 ask: setup ## Ask the LangGraph agent a question: make ask Q="..." (needs GEMINI_API_KEY)
-	$(PY) -m agent.graph --verbose "$(Q)"
+	$(PY) -m data_platform.agent.graph --verbose "$(Q)"

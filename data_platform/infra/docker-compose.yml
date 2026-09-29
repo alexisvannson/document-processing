@@ -38,8 +38,8 @@ services:
   # triggerer in one container. UI on localhost:8080 (AIRFLOW_PORT), no login (every user is admin).
   airflow:
     build:
-      context: ..
-      dockerfile: infra/airflow/Dockerfile
+      context: ../..
+      dockerfile: data_platform/infra/airflow/Dockerfile
     command: standalone
     environment:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-pipeline}:${POSTGRES_PASSWORD:-pipeline}@postgres:5432/airflow
@@ -48,7 +48,7 @@ services:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
       AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: "30"
-      PYTHONPATH: /opt/airflow/project  # the DAG imports pipeline.runs for its bookkeeping
+      PYTHONPATH: /opt/airflow/project  # the DAG imports data_platform.pipeline.runs for its bookkeeping
       # inside the compose network: host `postgres`, port 5432 (not the host's .env URLs)
       DATABASE_URL: postgresql://${POSTGRES_USER:-pipeline}:${POSTGRES_PASSWORD:-pipeline}@postgres:5432/${POSTGRES_DB:-warehouse}
       DBT_HOST: postgres
@@ -58,7 +58,7 @@ services:
       DBT_DBNAME: ${POSTGRES_DB:-warehouse}
     volumes:
       - ../dags:/opt/airflow/dags:ro
-      - ..:/opt/airflow/project:ro
+      - ../..:/opt/airflow/project:ro
     ports:
       - "${AIRFLOW_PORT:-8080}:8080"
     depends_on:

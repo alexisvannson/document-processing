@@ -2,12 +2,12 @@ import argparse
 import json
 from datetime import datetime, timezone
 
-from pipeline.db import connect
-from pipeline.extract import run_extract
-from pipeline.ingest import ingest
-from pipeline.ocr import GroundTruthOCR, ModelOCR, run_ocr
-from pipeline.redact import run_redact
-from pipeline.runs import fail_run, finish_run, record_step, start_run
+from data_platform.pipeline.db import connect
+from data_platform.pipeline.extract import run_extract
+from data_platform.pipeline.ingest import ingest
+from data_platform.pipeline.ocr import GroundTruthOCR, ModelOCR, run_ocr
+from data_platform.pipeline.redact import run_redact
+from data_platform.pipeline.runs import fail_run, finish_run, record_step, start_run
 
 STEPS = ["ingest", "ocr", "redact", "extract"]
 
@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument("--ocr", default="ground_truth", choices=["ground_truth", "model"],
                         help="ground_truth: annotated words from metadata.pkl; model: DBNet + the recognizer")
     parser.add_argument("--dbnet", default="checkpoints/dbnet_best.pt")
-    parser.add_argument("--recognizer", default="checkpoints/trocr/best")
+    parser.add_argument("--recognizer", default="checkpoints/trocr-printed/best")
     parser.add_argument("--corrupt", type=float, default=0.0,
                         help="Fraction of numeric tokens to corrupt with a swapped digit (simulated OCR errors)")
     parser.add_argument("--seed", type=int, default=42)

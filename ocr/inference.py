@@ -1,7 +1,7 @@
 """
-Two-step OCR with the trained models: DBNet finds word boxes, the ViT -> BERT recognizer
-reads each box. Preprocessing is the same as at validation time (ocr/dataset.py), so the
-models see what they were trained on.
+Two-step OCR with the trained models: DBNet finds word boxes, the recognizer (fine-tuned TrOCR,
+or the first ViT -> BERT) reads each box. Preprocessing is the same as at validation time
+(ocr/dataset.py), so the models see what they were trained on.
 """
 import os
 
@@ -32,7 +32,7 @@ def order_corners(box):
 
 
 class OCRModel:
-    def __init__(self, dbnet_path="checkpoints/dbnet_best.pt", recognizer_path="checkpoints/trocr/best",
+    def __init__(self, dbnet_path="checkpoints/dbnet_best.pt", recognizer_path="checkpoints/trocr-printed/best",
                  device=None, batch_size=8, box_thresh=0.3):
         from transformers import VisionEncoderDecoderModel
 

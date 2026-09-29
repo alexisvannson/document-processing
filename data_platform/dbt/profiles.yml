@@ -1,4 +1,4 @@
-# Local warehouse from infra/docker-compose.yml. Override with env vars elsewhere (Airflow, RDS).
+# Local warehouse from data_platform/infra/docker-compose.yml. Override with env vars elsewhere (Airflow, RDS).
 receipts:
   target: dev
   outputs:

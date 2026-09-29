@@ -19,4 +19,4 @@ models:
       +schema: marts
       +materialized: table
       +grants:
-        select: ["analyst"]  # read-only role used by Metabase (infra/init/02_roles.sh)
+        select: ["analyst"]  # read-only role used by Metabase (data_platform/infra/init/02_roles.sh)

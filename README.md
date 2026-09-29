@@ -1,120 +1,41 @@
 # document-processing
 
-Turning photos of messy documents into data you can trust and question. Receipts (the CORD dataset) stand
-in for medical reports: both are unstructured, photographed in bad conditions, contain personal data, and
-need specific values extracted reliably.
+OCR for photographed receipts (the [CORD](https://github.com/clovaai/cord) dataset, 200 Indonesian receipts):
+a **DBNet** detector finds the words, and a **TrOCR** recognizer fine-tuned on the receipts reads them.
 
-The repo has two halves:
+## Results
 
-- **OCR models**: a text detector (DBNet) and a text recognizer (ViT encoder + BERT decoder), trained on
-  the receipts.
-- **Data platform**: a pipeline that loads receipts into Postgres, redacts PII, extracts fields, validates
-  them with dbt, runs daily under Airflow, and is exposed through a Metabase dashboard and a LangGraph agent.
+All numbers are on the **test split**: 30 receipts (629 words) that were never used for training or for choosing
+checkpoints. The receipts are split 70 / 15 / 15 into train / val / test, by receipt, with a fixed seed.
 
-## Architecture
+| Stage | Result |
+| --- | --- |
+| Detection (DBNet), IoU ≥ 0.5 | recall **0.949**, precision **0.913** (F1 0.93) |
+| Recognition on ground-truth boxes (TrOCR fine-tuned, beam 4) | CER **0.031**, **90.5%** of words exactly right |
+| End to end (DBNet boxes → TrOCR) | **84.1%** of words found *and* read exactly; CER 0.041 on the words found |
+| Speed | 0.9 s per receipt on a Colab GPU, ~18 s on a laptop CPU |
 
-```
-                    ┌──────────────── Airflow: receipts_daily (daily) ────────────────┐
-                    │                                                                   │
- dataset_receipt/   │  ingest ──► ocr ──► redact ──► extract ──► dbt build ──► finish   │
-   images/*.png ────┼─►  │         │        │          │            │                   │
-   metadata.pkl     └────┼─────────┼────────┼──────────┼────────────┼───────────────────┘
-                         ▼         ▼        ▼          ▼            ▼
-                 ┌─────────────────────── Postgres: warehouse ───────────────────────┐
-                 │ ops             documents (status per receipt), pipeline_runs     │
-                 │ raw_restricted  ocr_tokens, unredacted (no analyst access)        │
-                 │ raw             ocr_tokens (PII masked), extracted_lines          │
-                 │ staging         dbt views + per-receipt checks                    │
-                 │ marts           fct_receipts, fct_line_items, receipt_quarantine  │
-                 └──────────────────────────────────┬────────────────────────────────┘
-                                                    │ read-only role `analyst`
-                                     ┌──────────────┴──────────────┐
-                                     ▼                             ▼
-                              Metabase dashboard            LangGraph agent (Gemini)
-```
+The recognizers compared (`notebooks/eval_recognizers.ipynb`, all run through the same inference code):
 
-The main design rule: **deterministic pipelines produce trusted data; the agent only reasons over it.**
-Every step is repeatable and logged, a receipt that fails a check is quarantined rather than published,
-and nothing downstream of the redaction step can read unredacted text.
+| Recognizer | CER | Exact words | CER on numbers |
+| --- | --- | --- | --- |
+| My first recognizer, ViT → BERT trained from pretrained parts | 0.702 | 12.1% | 0.481 |
+| `microsoft/trocr-base-printed`, zero-shot | 0.258 | 66.6% | 0.017 |
+| `trocr-base-printed` fine-tuned on the receipts (greedy) | 0.032 | 90.3% | 0.008 |
+| `trocr-base-printed` fine-tuned on the receipts (beam 4) | **0.031** | **90.5%** | **0.008** |
 
-## Repository layout
+**What the OCR error costs downstream.** I also ran the OCR through a small extraction pipeline, which checks
+that each receipt's items add up to its total. Test receipts that pass: **52%** with my OCR vs **60%** with
+perfect (ground-truth) OCR. On receipts that pass in both runs, the extracted total is the same **99%** of the time
+(`notebooks/eval_system.ipynb`, see [Beyond the brief](#beyond-the-brief-a-data-platform-around-the-ocr)).
 
-```
-ocr/                     OCR models and their data code
-  models/                DBNET.py (ResNet-18 + FPN + DB head), VIT.py + BERT.py + TrOCR.py (recognizer), CRAFT.py
-  dataset.py             detection and recognition datasets, augmentations, 70/15/15 split by receipt
-  DBLoss.py              DBNet loss
-  getDBprobMap.py        ground-truth probability and threshold maps from word boxes
-  getDBbboxes.py         probability map -> text boxes (post-processing)
-training/                train_dbnet.py, train_trocr.py (W&B logging, best checkpoint on val loss)
-notebooks/               Colab notebooks: train / evaluate DBNet, train the recognizer (from scratch, or
-                         fine-tune trocr-base-printed), and eda_words (word and character imbalance)
+## Approach
 
-pipeline/                receipts pipeline (plain Python, runs from the CLI or Airflow)
-  run.py                 CLI: python -m pipeline.run [--steps ...] [--corrupt 0.1] [--reset] [--run-id ...]
-  ingest.py ocr.py redact.py extract.py   the four steps
-  lines.py               deskew + group word boxes into text lines
-  db.py runs.py          per-receipt transactions and statuses; run bookkeeping in ops.pipeline_runs
-dbt/                     staging -> checks -> marts, with tests
-dags/receipts_daily.py   Airflow DAG
-agent/                   LangGraph agent: graph.py (nodes, CLI), tools.py (read-only SQL, receipt lookup)
+### Detection: DBNet (`ocr/models/DBNET.py`)
 
-infra/
-  docker-compose.yml     Postgres, Metabase, Airflow
-  init/                  database setup on first start: databases, warehouse schemas, `analyst` role
-  airflow/Dockerfile     Airflow image with separate venvs for the pipeline and dbt
-  metabase/setup.py      provisions the Metabase admin, warehouse connection and dashboard
-Makefile                 every command below (`make help` lists them)
-.env.example             settings template
-```
-
-Not in git: `dataset_receipt/` (the data), `checkpoints/` (trained weights), `.env`.
-
-## Quick start
-
-**Prerequisites**
-- Docker Desktop. Give it 6–8 GB of memory: Postgres, Metabase and Airflow use about 2.5 GB together.
-- Python 3.12. `make setup` creates `.venv` from `requirements.txt`.
-- The data in `dataset_receipt/`: `images/*.png` plus `metadata.pkl`, a DataFrame with one row per receipt:
-  `file_name`, `split_origin`, `words` (list of strings) and `bboxes` (list of 4-point boxes `x1..y4`).
-- For the agent only: a Gemini API key (the free tier works, with Flash models).
-
-**Run the data platform**
-
-```bash
-cp .env.example .env     # optional: passwords, ports, GEMINI_API_KEY
-make setup               # .venv with all Python dependencies
-make up                  # Postgres :5433, Metabase :3000, Airflow :8080
-make pipeline            # load the 200 receipts: ingest -> OCR -> redact -> extract
-make dbt                 # build and test the marts
-make dashboard           # create the Metabase dashboard (prints its URL and login)
-make ask Q="What's the average receipt total by payment method?"
-```
-
-After that, Airflow runs the same steps every day. `make trigger` starts a run immediately. The Airflow UI
-is at http://localhost:8080 (no login locally).
-
-**Train the OCR models**
-
-```bash
-make traindbnet EPOCHS=50 BATCH_SIZE=4     # -> checkpoints/dbnet_{best,last}.pt
-make traintrocr TROCR_EPOCHS=30            # -> checkpoints/trocr/{best,last}
-```
-
-On a GPU, use the Colab notebooks in `notebooks/`. They copy the data from Google Drive, run the same
-training scripts, and save checkpoints back to Drive.
-
-## Components
-
-### OCR models (`ocr/`, `training/`)
-
-OCR is done in two steps: find the text, then read it.
-
-**Detection: DBNet.** A ResNet-18 backbone with a feature pyramid predicts, for every pixel, the
-probability that it is text, plus a threshold map. "Differentiable binarization" learns where to cut
-between neighbouring lines, which suits dense receipt text. `getDBbboxes.py` turns the probability map
-back into boxes. Evaluation reports precision, recall and F1 of the boxes at IoU ≥ 0.5. I chose DBNet over
-the alternatives I considered:
+A ResNet-18 backbone with a feature pyramid predicts, for every pixel, the probability that it is text, plus a
+threshold map. "Differentiable binarization" learns where to cut between neighbouring lines, which suits dense
+receipt text. `ocr/getDBbboxes.py` turns the probability map back into boxes. I chose DBNet over:
 
 | Approach | Why not (for receipts) |
 | --- | --- |
@@ -123,151 +44,144 @@ the alternatives I considered:
 | UNet segmentation | merges close lines; heavy post-processing |
 | CRAFT (`ocr/models/CRAFT.py`) | character-level; kept as an alternative, no training script |
 
-**Recognition: ViT → BERT.** A TrOCR-style encoder-decoder: a pretrained ViT encodes each word crop, and
-a BERT decoder with cross-attention generates the text one character at a time. The tokenizer is
-character-level, because WordPiece can't round-trip strings like `16,500`. The training script reports
-character error rate and exact word accuracy.
+### Recognition: from a failed first model to fine-tuned TrOCR
 
-**Robustness.** Detector training uses augmentations for the physical defects of real photos: shadows and
-lighting gradients, creases (elastic and grid distortion, rotations), and contrast changes. The recognizer
-uses lighter affine ones (rotation, shear, scale) on each word crop. Both scripts split the
-receipts 70/15/15 into train, validation and test with a fixed seed, pick the checkpoint on validation
-loss, and score the test set once at the end.
+**First attempt: ViT → BERT** (`ocr/models/VIT.py`, `BERT.py`, `TrOCR.py`, `training/train_trocr.py`). A pretrained
+ViT encoder and a pretrained BERT decoder, joined by cross-attention, with a character-level tokenizer. It scored a
+CER of 0.70 on test. `notebooks/eda_words.ipynb` explains why:
 
-### Pipeline (`pipeline/`)
+- **The model didn't read the image.** Given a white or random-noise image instead of a word crop, it produced the
+  same outputs (`Tol`, `1`). The cross-attention layers, the only link from image to text, are new in BERT and start
+  random; their weights stayed at the random-initialization scale.
+- **The data rewards not reading.** `1` is 8% of all words and `0` is 17% of all characters, so predicting the
+  frequent patterns lowers the loss without looking at the crop.
 
-Four steps. Each reads its input from Postgres and writes its output there, one transaction per receipt.
-The status in `ops.documents` decides which step picks a receipt up next:
+**Second attempt: fine-tune `microsoft/trocr-base-printed`** (`notebooks/train_trocr_printed.ipynb`). Its
+cross-attention is already trained to read printed text. On top of that:
 
-```
-pending ─ocr─► ocr_done ─redact─► redacted ─extract─► extracted
-                   └─► ocr_failed      └─► redact_failed    └─► extract_failed   (error recorded)
-```
-
-- **Idempotent:** images are keyed by file hash, so re-ingesting is a no-op, and a step only processes
-  receipts still waiting for it. `--reset` reprocesses everything.
-- **Isolated failures:** a failing receipt is rolled back, parked with its error, and its stale output
-  is deleted; the other receipts continue.
-- **OCR engine:** for now the words and boxes come from the ground truth in `metadata.pkl`, so the rest
-  of the platform could be built before the models were ready. `--corrupt 0.1` swaps a digit in 10% of
-  the numbers to simulate recognition errors.
-- **Redaction** (`redact.py`) runs before extraction, so extracted fields can never carry PII. It
-  masks emails, phone numbers, masked card numbers and 13–19 digit numbers that pass the Luhn checksum
-  (product barcodes usually don't), plus numbers and names after keywords such as TELP, CARD or KASIR.
-  Unredacted tokens stay in `raw_restricted`.
-- **Extraction** (`lines.py`, `extract.py`) is rule-based, so it's repeatable and easy to audit. It
-  deskews the page using the median slope of the words, groups words into lines, and labels each line
-  by keyword, in English and Indonesian: `item`, `subtotal`, `tax`, `service`, `discount`, `total`,
-  `cash`, `card`, `change`… It parses `16,500` / `23.000` / `Rp 45.000`, quantities and unit prices.
-  Every extracted line keeps `token_idxs`, pointing back to its boxes in the image.
-
-On the ground-truth OCR: all 200 receipts are ingested, 177 are extracted, and 23 fail with no readable
-TOTAL amount.
-
-### dbt (`dbt/`)
-
-`dbt build` turns `raw.extracted_lines` into published tables. `int_receipt_checks` computes, per receipt:
-
-- `no_items`: no item line was found
-- `items_do_not_reconcile`: the items (with discounts) don't add up to the subtotal or any TOTAL line,
-  within 1
-- `change_inconsistent`: `cash − total ≠ change`, checked when both are printed
-
-Each extracted receipt lands in exactly one mart:
-
-| Mart | Contents |
+| Problem | Fix |
 | --- | --- |
-| `marts.fct_receipts` | receipts that passed: total (the last TOTAL line, i.e. the amount paid), subtotal, tax, service, cash, change, payment method |
-| `marts.fct_line_items` | their items: name, normalized name, qty, unit price, amount, source boxes |
-| `marts.receipt_quarantine` | the others, with `failed_checks` |
+| Frequent words dominate each epoch | weighted sampling: weight `1 / sqrt(frequency)`, up to 3× for words with rare characters (`1` drops from 8.0% to 0.7% of samples) |
+| Few examples of rare characters and prices | synthetic words rendered on the fly (prices with `,` or `.`, quantities, rare characters), 30% on top of the real words |
+| Loss can drop without reading | checkpoint chosen on validation **CER**, plus a "blind test" each epoch: CER on white images vs real crops |
+| One learning rate for everything | separate learning rates for the encoder and the decoder, warmup on 10% of the steps |
 
-On ground truth: 139 published and 38 quarantined. With `CORRUPT=0.1`: 92 published and 85 quarantined.
-The 25 tests include two of my own: no receipt is lost between the marts, and no published item name
-looks like a phone number, card number or email. A failing test stops the marts from being rebuilt, so
-downstream readers keep the last good data. The `analyst` role gets SELECT on every mart that is rebuilt.
+Zero-shot, the model already scored 0.26 CER, and most of its errors were receipt conventions (`Subtotal` →
+`SUBTOTAL`, `13,636` → `13.636`). One epoch of fine-tuning brought validation CER to 0.032.
 
-### Airflow (`dags/receipts_daily.py`)
+### Robustness
 
-`start → ingest → ocr → redact → extract → dbt_build → finish`, scheduled daily with one retry per task.
+Detector training uses augmentations for the physical defects of real photos: shadows and lighting gradients,
+creases (elastic and grid distortion, rotations), and contrast changes. The recognizer uses lighter affine ones
+(rotation, shear, scale) on each word crop.
 
-- Each step runs the pipeline CLI under the DAG run's id, so `ops.pipeline_runs` has one row per run,
-  with every step's stats.
-- A task that still fails after its retry marks the run `failed` and names the task. The dashboard and
-  the agent read this.
-- The image keeps the pipeline and dbt in their own venvs, isolated from Airflow's packages. The repo is
-  mounted read-only.
+## Error analysis
 
-### Metabase
+The fine-tuned recognizer gets 60 of the 629 test words wrong (`notebooks/eval_recognizers.ipynb`):
 
-`make dashboard` provisions everything through Metabase's API and can be re-run:
+| Kind of error | Share | Examples (truth → prediction) |
+| --- | --- | --- |
+| a letter wrong, missing or extra | 47% | `COFFEE` → `COFFE`, `Bandeng` → `Bandang` |
+| a digit wrong | 20% | `80,500` → `60,500`, `12000` → `1200` |
+| case only | 18% | `Cash` → `cash`, `MILK` → `MILk` |
+| other punctuation or spaces | 8% | `SUB_TOTAL` → `SUB TOTAL` |
+| `,` vs `.` separator only | 7% | `20,000` → `20.000` |
 
-- the admin account, on first run
-- a connection to the warehouse as the read-only `analyst` role
-- a "Receipts" dashboard: published, quarantined and failed counts, last run status, receipt totals,
-  payment methods, top items, quarantine reasons and recent pipeline runs
+Case and separator errors (a quarter of the total) are harmless once amounts and names are normalized.
+Digit errors are the dangerous ones, because they change amounts.
 
-### Agent (`agent/`)
+**Can confidence flag the errors?** Confidence is the geometric mean of the token probabilities. Sending every
+word below a threshold to human review:
 
-A LangGraph graph that answers questions about the receipts, using Gemini (`gemini-3.8-flash` by default)
-through Google's `google-genai` SDK. The SDK's automatic function calling is off, so the graph owns the loop:
+| Flag if confidence < | Words flagged | Errors caught |
+| --- | --- | --- |
+| 0.80 | 7% | 37% |
+| 0.90 | 15% | 58% |
+| 0.95 | 24% | 85% |
+
+At 0.95, a reviewer checks a quarter of the words and catches 85% of the errors. Some errors are confidently
+wrong: `20,000` → `20.000` at 0.999. That's why the downstream check that amounts add up still matters.
+
+## Repository layout
 
 ```
-START → check_freshness → agent ⇄ tools → guard → END
+ocr/                  models and data code
+  models/             DBNET.py (ResNet-18 + FPN + DB head); VIT.py + BERT.py + TrOCR.py (first recognizer); CRAFT.py
+  dataset.py          detection and recognition datasets, augmentations, 70/15/15 split by receipt
+  DBLoss.py           DBNet loss
+  getDBprobMap.py     ground-truth probability and threshold maps from word boxes
+  getDBbboxes.py      probability map -> word boxes
+  inference.py        OCRModel: detect + recognize, used by the evaluation notebooks and the pipeline
+training/             train_dbnet.py, train_trocr.py (W&B logging)
+notebooks/
+  train_model.ipynb           train DBNet (Colab)
+  eval_dbnet.ipynb            evaluate DBNet, try it on your own image
+  train_trocr.ipynb           train the first recognizer, ViT -> BERT (Colab)
+  eda_words.ipynb             word / character imbalance, and why the first recognizer failed
+  train_trocr_printed.ipynb   fine-tune trocr-base-printed (Colab)
+  eval_recognizers.ipynb      compare the recognizers on test, error analysis, end to end with DBNet
+  eval_system.ipynb           the OCR inside the extraction pipeline vs perfect OCR
+results/              per-receipt outputs of the pipeline runs, read by eval_system.ipynb
+data_platform/        optional extra: pipeline, dbt, Airflow, Metabase, agent (see below)
 ```
 
-- **check_freshness** reads the last pipeline run and the receipt counts by status before the model sees
-  the question. Answers can then say how fresh the data is and what they leave out.
-- **tools**: `run_sql` (one SELECT, at most 100 rows) and `get_receipt(doc_id)`.
-  - Both connect as `analyst`, in read-only transactions with a 5 s statement timeout.
-  - Postgres itself rejects writes and access to `raw` or `raw_restricted`.
-- **guard** masks anything that looks like a phone number, card number or email in the final answer.
-- At most 8 tool rounds per question. Overloaded-model errors (503) are retried with backoff, then the
-  question goes to `GEMINI_FALLBACK_MODEL`.
+Not in git: `dataset_receipt/` (the data) and `checkpoints/` (trained weights).
+
+## Quick start
+
+**Prerequisites**
+- Python 3.12. `make setup` creates `.venv` from `requirements.txt`.
+- The data in `dataset_receipt/`: `images/*.png` plus `metadata.pkl`, a DataFrame with one row per receipt:
+  `file_name`, `split_origin`, `words` (list of strings) and `bboxes` (list of 4-point boxes `x1..y4`).
+- A GPU for training. The Colab notebooks copy the data from Google Drive, train, and save checkpoints back to
+  Drive (`MyDrive/document-processing/checkpoints/`).
+
+**Train**
 
 ```bash
-make ask Q="Why is receipt 57 quarantined?"     # --verbose output shows the data status and tool calls
+make traindbnet EPOCHS=50 BATCH_SIZE=4     # -> checkpoints/dbnet_{best,last}.pt
 ```
 
-## Configuration
+The fine-tuned recognizer is trained in `notebooks/train_trocr_printed.ipynb` (Colab, GPU), which saves
+`checkpoints/trocr-printed/best`. `make traintrocr` trains the first ViT → BERT recognizer.
 
-Settings live in `.env`, which is gitignored; start with `cp .env.example .env`. The Makefile exports it
-to every target and passes it to docker compose. Without a `.env`, everything falls back to the same
-local defaults.
+**Run the OCR on an image**
 
-| Variable | Used for |
-| --- | --- |
-| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` | the agent |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | the warehouse container |
-| `ANALYST_PASSWORD` | the read-only role; only applied when the Postgres volume is first created |
-| `METABASE_PORT`, `AIRFLOW_PORT` | host ports |
-| `DATABASE_URL`, `AGENT_DATABASE_URL`, `DBT_*` | connections from the host, derived from the values above |
-| `MB_URL`, `MB_ADMIN_EMAIL`, `MB_ADMIN_PASSWORD` | Metabase provisioning |
+```python
+import cv2
+from ocr.inference import OCRModel
 
-Keep `.env` to plain `KEY=value` lines, without quotes, because the Makefile includes it directly.
+ocr = OCRModel("checkpoints/dbnet_best.pt", "checkpoints/trocr-printed/best")
+image = cv2.cvtColor(cv2.imread("dataset_receipt/images/test_receipt_00000.png"), cv2.COLOR_BGR2RGB)
+boxes = ocr.detect(image)
+texts, confidences = ocr.recognize(image, boxes, num_beams=4)
+```
 
-## Commands
+**Evaluate:** `notebooks/eval_recognizers.ipynb` runs in a few minutes on a Colab GPU, or about an hour on a CPU.
 
-| Command | What it does |
-| --- | --- |
-| `make setup` | create `.venv` and install `requirements.txt` |
-| `make up` / `make down` | start / stop Postgres, Metabase and Airflow; data persists in the `pgdata` volume |
-| `make pipeline [CORRUPT=0.1] [OCR=model RECOGNIZER=...]` | reprocess every receipt through the pipeline, with ground-truth OCR or the trained models |
-| `make dbt` | build and test the dbt models |
-| `make dashboard` | create or refresh the Metabase dashboard |
-| `make trigger` | run the Airflow DAG now |
-| `make ask Q="..."` | ask the agent a question |
-| `make psql` | psql shell on the warehouse |
-| `make traindbnet` / `make traintrocr` | train the detector / recognizer (`make help` lists the variables) |
+## Limitations and next steps
 
-## Current limitations
+- **Small test set.** 30 receipts and 629 words, so a difference of one or two points between models may be noise.
+- **Detection misses 5% of the words**, and they can't be recovered later. End-to-end accuracy (84%) is lower
+  than recognition on ground-truth boxes (90%) mostly because of these misses.
+- **Crops are stretched to a square** (384×384) although the median word is 2.5× wider than tall. Padding to keep
+  the aspect ratio is worth trying.
+- **Digit errors can be confidently wrong.** A digit-specific check (e.g. against the other amounts on the receipt)
+  would catch more of them than a confidence threshold.
+- **CPU inference is slow** (~18 s per receipt, mostly the 334M-parameter recognizer). Greedy decoding loses almost
+  nothing (0.032 vs 0.031 CER) and is 2.5× faster than beam 4.
 
-- **The pipeline doesn't use the trained models yet.** Its OCR step reads the ground truth. The next
-  step is an OCR engine that runs DBNet + the recognizer, then measuring how much field accuracy drops
-  compared with ground truth.
-- **Extraction is rule-based and tuned on these 200 receipts.** It reconciles 142 of 200 on ground truth.
-- **The receipts carry almost no PII.** 1 phone number and 1 card number are masked across the dataset.
-  Medical reports would need a NER model behind the rules, with recall measured on a hand-labelled set.
-- **The agent has no evaluation set yet.** It answers real questions correctly (checked against SQL),
-  but it still needs a fixed set of questions with expected answers to measure changes.
-- **Everything is set up for local development:** default passwords, no Airflow login, a single-container
-  Airflow (`standalone`). On AWS this would map to RDS, managed Airflow and Secrets Manager.
+## Beyond the brief: a data platform around the OCR
+
+After the OCR, I built an optional extra in [`data_platform/`](data_platform/README.md). It isn't part of the
+brief. It shows how the OCR would be used on real documents, such as medical reports, which are also photographed
+in bad conditions and contain personal data:
+
+- a **pipeline** that runs the OCR on each receipt, redacts personal data, and extracts the items and totals into
+  Postgres;
+- **dbt** checks that publish a receipt only if its items add up to its total, and put the rest in quarantine;
+- **Airflow** to run it daily, a **Metabase** dashboard, and a **LangGraph** agent that answers questions in plain
+  English.
+
+This is where the downstream numbers in [Results](#results) come from. Running the extraction on perfect OCR and
+on my OCR, with everything else identical, isolates the cost of OCR errors (`notebooks/eval_system.ipynb`).

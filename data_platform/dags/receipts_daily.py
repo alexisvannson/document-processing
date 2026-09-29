@@ -1,7 +1,7 @@
 """
 Receipts pipeline, daily: ingest -> ocr -> redact -> extract -> dbt build.
 
-Each step is the pipeline CLI (`python -m pipeline.run --steps <step>`) run in its own venv
+Each step is the pipeline CLI (`python -m data_platform.pipeline.run --steps <step>`) run in its own venv
 under this DAG run's id, so ops.pipeline_runs has one row per DAG run. Airflow owns that
 row: `start_run` opens it, `finish_run` closes it, and a task that fails for good (after its
 retry) marks it failed with the task's name, which is what the agent will read to say how
@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import dag, task
 
-from pipeline.db import connect
-from pipeline.runs import fail_run, finish_run, start_run
+from data_platform.pipeline.db import connect
+from data_platform.pipeline.runs import fail_run, finish_run, start_run
 
 PROJECT = "/opt/airflow/project"
 PIPELINE_PY = "/opt/airflow/venvs/pipeline/bin/python"
@@ -47,14 +47,14 @@ def receipts_daily():
         return BashOperator(
             task_id=name,
             cwd=PROJECT,
-            bash_command=f"{PIPELINE_PY} -m pipeline.run --steps {name} --run-id '{{{{ run_id }}}}'",
+            bash_command=f"{PIPELINE_PY} -m data_platform.pipeline.run --steps {name} --run-id '{{{{ run_id }}}}'",
         )
 
     dbt_build = BashOperator(
         task_id="dbt_build",
         cwd=PROJECT,
         # target/ and logs/ go to /tmp: the project is mounted read-only
-        bash_command=f"{DBT} build --project-dir dbt --profiles-dir dbt"
+        bash_command=f"{DBT} build --project-dir data_platform/dbt --profiles-dir data_platform/dbt"
                      " --target-path /tmp/dbt/target --log-path /tmp/dbt/logs",
     )
 

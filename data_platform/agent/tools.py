@@ -1,6 +1,6 @@
 """
 The agent's tools. They connect as the read-only `analyst` role (SELECT on marts and ops only,
-see infra/init/02_roles.sh), inside read-only transactions with a statement timeout, so even
+see data_platform/infra/init/02_roles.sh), inside read-only transactions with a statement timeout, so even
 a bad query can't write, read raw_restricted, or hang the agent.
 """
 import json

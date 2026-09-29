@@ -3,7 +3,7 @@ import random
 import pandas as pd
 from psycopg.types.json import Jsonb
 
-from pipeline.db import process_documents
+from data_platform.pipeline.db import process_documents
 
 
 class GroundTruthOCR:
@@ -38,7 +38,7 @@ class GroundTruthOCR:
 
 
 class ModelOCR:
-    """The trained models: DBNet boxes, then the ViT -> BERT recognizer on each box (ocr/inference.py)."""
+    """The trained models: DBNet boxes, then the recognizer on each box (ocr/inference.py)."""
 
     name = "model"
 

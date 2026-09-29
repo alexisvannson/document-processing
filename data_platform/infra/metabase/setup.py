@@ -3,7 +3,7 @@ Provisions the local Metabase (localhost:3000): the admin account on first run, 
 to the warehouse as the read-only `analyst` role, and the "Receipts" dashboard.
 Safe to re-run: the dashboard and its questions are archived and rebuilt from CARDS below.
 
-    python infra/metabase/setup.py
+    python data_platform/infra/metabase/setup.py
 """
 import json
 import os

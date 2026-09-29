@@ -1,7 +1,7 @@
 import re
 
-from pipeline.db import process_documents
-from pipeline.lines import group_lines
+from data_platform.pipeline.db import process_documents
+from data_platform.pipeline.lines import group_lines
 
 EXTRACTOR_VERSION = "rules-v1"
 
